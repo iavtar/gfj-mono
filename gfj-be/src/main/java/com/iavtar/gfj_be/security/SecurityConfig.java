@@ -55,23 +55,27 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:3000", "http://13.203.132.105"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList(
-            "Authorization", 
-            "Content-Type", 
-            "X-Requested-With",
-            "Accept",
-            "Origin",
-            "Access-Control-Request-Method",
-            "Access-Control-Request-Headers"
+
+        // Allow frontend origins
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",        // local dev React
+                "http://13.203.132.105"         // production frontend served by Nginx
         ));
-        configuration.setExposedHeaders(Arrays.asList(
-            "Access-Control-Allow-Origin",
-            "Access-Control-Allow-Credentials"
+
+        // Allowed methods
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
         ));
+
+        // Allow all request headers
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+
+        // Expose only useful response headers
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+
+        // Enable credentials (cookies/JWT in headers)
         configuration.setAllowCredentials(true);
+
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
