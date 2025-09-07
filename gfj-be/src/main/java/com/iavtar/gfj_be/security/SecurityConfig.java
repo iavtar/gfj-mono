@@ -56,14 +56,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173",
-            "http://localhost:3000", 
-            "http://127.0.0.1:5173",
-            "http://127.0.0.1:3000",
-            "https://gemsfromjaipur.vercel.app",
-            "https://gemsfromjaipur-8zg5h6k24-iavtars-projects.vercel.app"
-        ));
+        configuration.setAllowedOrigins(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList(
             "Authorization", 
