@@ -221,8 +221,8 @@ public class BusinessAdminController {
     @PostMapping("/updateMaterial")
     public ResponseEntity<?> updateMaterial(@RequestBody Material material) {
         try {
-            if (materialRepository.findByTitle(material.getTitle()).isEmpty()) {
-                throw new RuntimeException("Material with this title not exists");
+            if (materialRepository.findById(material.getId()).isEmpty()) {
+                throw new RuntimeException("Material with this id not exists");
             }
             materialService.updateMaterial(material);
             ServiceResponse response = ServiceResponse.builder().message("Material updated successfully").build();
@@ -236,8 +236,8 @@ public class BusinessAdminController {
     @DeleteMapping("/deleteMaterial")
     public ResponseEntity<?> deleteMaterial(@RequestBody Material material) {
         try {
-            if (materialRepository.findByTitle(material.getTitle()).isEmpty()) {
-                ServiceResponse errorResponse = ServiceResponse.builder().message("Material with this title not exists").build();
+            if (materialRepository.findById(material.getId()).isEmpty()) {
+                ServiceResponse errorResponse = ServiceResponse.builder().message("Material with this id does not exists").build();
                 return ResponseEntity.badRequest().body(errorResponse);
             }
             materialService.deleteMaterial(material.getId());
