@@ -1,8 +1,35 @@
 import axios from 'axios';
 
-// Get API URL from environment variable or use default
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081';
-const BASE_URL = import.meta.env.DEV ? '/api' : `${API_URL}/api`;
+// Dynamic API URL detection based on current host
+const getApiUrl = () => { 
+  const currentHost = window.location.hostname;
+  const currentProtocol = window.location.protocol;
+  const apiPort = '8081';
+  return `${currentProtocol}//${currentHost}:${apiPort}`;
+};
+
+const API_URL = getApiUrl();
+
+// Determine if we should use proxy or direct API callsgit stash
+// Use proxy when:
+// 1. In development mode (Vite dev server)
+// 2. When frontend and backend are on the same server (same hostname)
+const shouldUseProxy = import.meta.env.DEV || 
+  (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
+
+const BASE_URL = shouldUseProxy ? '/api' : `${API_URL}/api`;
+
+// Debug logging for API URL detection
+console.log('🔧 API Configuration:', {
+  currentHost: window.location.hostname,
+  currentProtocol: window.location.protocol,
+  currentPort: window.location.port,
+  detectedApiUrl: API_URL,
+  baseUrl: BASE_URL,
+  shouldUseProxy: shouldUseProxy,
+  isDev: import.meta.env.DEV,
+  viteApiUrl: import.meta.env.VITE_API_URL
+});
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
