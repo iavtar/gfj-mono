@@ -23,7 +23,7 @@ const BASE_URL = shouldUseProxy ? '/api' : `${API_URL}/api`;
 console.log('🔧 API Configuration:', {
   currentHost: window.location.hostname,
   currentProtocol: window.location.protocol,
-  currentPort: window.location.port,
+  currentPort: 8081,
   detectedApiUrl: API_URL,
   baseUrl: BASE_URL,
   shouldUseProxy: shouldUseProxy,
