@@ -37,6 +37,11 @@ const SimpleChatBox = ({ currentUser }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Helper function to safely check if service worker controller is available
+  const isServiceWorkerControllerAvailable = () => {
+    return navigator.serviceWorker && navigator.serviceWorker.controller;
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -86,18 +91,20 @@ const SimpleChatBox = ({ currentUser }) => {
         }
         
         // Wait for the service worker to be controlling the page
-        if (navigator.serviceWorker.controller) {
+        if (isServiceWorkerControllerAvailable()) {
           // Service worker is already controlling the page
           if (user && token && !isPolling) {
             startPolling();
           }
         } else {
           // Wait for the service worker to take control
-          navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (user && token && !isPolling) {
-              startPolling();
-            }
-          });
+          if (navigator.serviceWorker) {
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+              if (user && token && !isPolling) {
+                startPolling();
+              }
+            });
+          }
         }
       }
     } catch (error) {
@@ -107,7 +114,7 @@ const SimpleChatBox = ({ currentUser }) => {
 
   const startPolling = () => {
     try {
-      if (serviceWorkerRef.current && navigator.serviceWorker.controller && !isPolling) {
+      if (serviceWorkerRef.current && isServiceWorkerControllerAvailable() && !isPolling) {
         navigator.serviceWorker.controller.postMessage({
           type: 'START_POLLING',
           data: {
@@ -121,7 +128,8 @@ const SimpleChatBox = ({ currentUser }) => {
       } else {
         console.warn('Cannot start polling: service worker not ready or already polling', {
           hasServiceWorker: !!serviceWorkerRef.current,
-          hasController: !!navigator.serviceWorker.controller,
+          hasNavigatorServiceWorker: !!navigator.serviceWorker,
+          hasController: isServiceWorkerControllerAvailable(),
           isPolling
         });
       }
@@ -132,7 +140,7 @@ const SimpleChatBox = ({ currentUser }) => {
 
   const stopPolling = () => {
     try {
-      if (navigator.serviceWorker.controller && isPolling) {
+      if (isServiceWorkerControllerAvailable() && isPolling) {
         navigator.serviceWorker.controller.postMessage({
           type: 'STOP_POLLING'
         });
@@ -140,7 +148,8 @@ const SimpleChatBox = ({ currentUser }) => {
         console.log('Polling stopped successfully');
       } else {
         console.warn('Cannot stop polling: no controller or not polling', {
-          hasController: !!navigator.serviceWorker.controller,
+          hasNavigatorServiceWorker: !!navigator.serviceWorker,
+          hasController: isServiceWorkerControllerAvailable(),
           isPolling
         });
       }
@@ -222,7 +231,7 @@ const SimpleChatBox = ({ currentUser }) => {
       
       // Update service worker with new message
       try {
-        if (navigator.serviceWorker.controller) {
+        if (isServiceWorkerControllerAvailable()) {
           navigator.serviceWorker.controller.postMessage({
             type: 'ADD_MESSAGE',
             data: { message: response.data }
@@ -269,7 +278,7 @@ const SimpleChatBox = ({ currentUser }) => {
       
       // Update service worker when clearing messages
       try {
-        if (navigator.serviceWorker.controller) {
+        if (isServiceWorkerControllerAvailable()) {
           navigator.serviceWorker.controller.postMessage({
             type: 'CLEAR_MESSAGES'
           });
