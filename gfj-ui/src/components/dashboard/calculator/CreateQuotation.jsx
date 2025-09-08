@@ -39,7 +39,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.j
 
 const purityToPercentMap = {
   22: 92,
-  18: 75,
+  18: 75.5,
   14: 59,
   10: 43,
   9: 38.5,
