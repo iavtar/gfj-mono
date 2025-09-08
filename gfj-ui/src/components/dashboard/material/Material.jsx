@@ -325,19 +325,19 @@ const Material = () => {
                             }}
                           />
                           <DeleteIcon
-                            disabled={[6, 7].includes(material?.id)}
-                            style={{ cursor: [6, 7].includes(material?.id) ? "not-allowed" : "pointer" }}
-                            color={[6, 7].includes(material?.id) ? "disabled" : "error"}
+                            disabled={[1, 2].includes(material?.id)}
+                            style={{ cursor: [1, 2].includes(material?.id) ? "not-allowed" : "pointer" }}
+                            color={[1, 2].includes(material?.id) ? "disabled" : "error"}
                             onClick={() => {
-                              if ([6, 7].includes(material?.id)) return;
+                              if ([1, 2].includes(material?.id)) return;
                               handleDeleteMaterial(material);
                             }}
-                            titleAccess={[6, 7].includes(material?.id) ? "Delete (Disabled)" : "Delete"}
+                            titleAccess={[1, 2].includes(material?.id) ? "Delete (Disabled)" : "Delete"}
                             sx={{
-                              opacity: [6, 7].includes(material?.id) ? 0.5 : 1,
+                              opacity: [1, 2].includes(material?.id) ? 0.5 : 1,
                               "&:hover": {
-                                transform: [6, 7].includes(material?.id) ? "none" : "scale(1.1)",
-                                transition: [6, 7].includes(material?.id) ? "none" : "transform 0.2s ease-in-out",
+                                transform: [1, 2].includes(material?.id) ? "none" : "scale(1.1)",
+                                transition: [1, 2].includes(material?.id) ? "none" : "transform 0.2s ease-in-out",
                               },
                             }}
                           />
