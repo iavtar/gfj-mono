@@ -24,6 +24,7 @@ import {
   Select,
   MenuItem,
   InputAdornment,
+  TablePagination
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
@@ -59,7 +60,7 @@ const ClientAdministration = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [dropdownUsers, setDropdownUsers] = useState({});
   const [selectedAgent, setSelectedAgent] = useState("all");
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchPayload, setSearchPayload] = useState({});
@@ -148,6 +149,17 @@ const ClientAdministration = () => {
     if (newPage < 1 || newPage > totalPages) return;
     setPage(newPage);
     fetchUsers({}, newPage);
+  };
+
+  const handleTablePaginationChange = (event, newPage) => {
+    setPage(newPage + 1); // Convert 0-based to 1-based
+  };
+
+  const handleRowsPerPageChange = (event) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setPageSize(newRowsPerPage);
+    setPage(1); // Reset to first page when changing page size
+    // The useEffect will trigger fetchUsers with the new pageSize
   };
 
   const handleAgentChange = (event) => {
@@ -338,56 +350,40 @@ const ClientAdministration = () => {
               >
                 Client List
               </Typography>
-              <Box className="flex items-center gap-2">
-                <Typography variant="body2" className="text-gray-600">
-                  {(page - 1) * pageSize + 1}–
-                  {Math.min(page * pageSize, filteredUsers.length)} of{" "}
-                  {filteredUsers.length}
-                </Typography>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => handlePageChange("prev")}
-                  disabled={page === 1}
-                  startIcon={<ArrowLeftIcon />}
-                  sx={{
-                    fontWeight: 500,
-                    textTransform: "none",
-                    minWidth: 100,
-                    borderRadius: "8px",
-                    borderColor: "#d1d5db",
-                    "&:hover": {
-                      borderColor: "#4c257e",
-                      backgroundColor: "#f9fafb",
-                    }
-                  }}
-                >
-                  Previous
-                </Button>
-                <Typography variant="body2" className="text-gray-600">
-                  Page {page} of {totalPages}
-                </Typography>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => handlePageChange("next")}
-                  disabled={page === totalPages || totalPages === 0}
-                  endIcon={<ArrowRightIcon />}
-                  sx={{
-                    fontWeight: 500,
-                    textTransform: "none",
-                    minWidth: 80,
-                    borderRadius: "8px",
-                    borderColor: "#d1d5db",
-                    "&:hover": {
-                      borderColor: "#4c257e",
-                      backgroundColor: "#f9fafb",
-                    }
-                  }}
-                >
-                  Next
-                </Button>
-              </Box>
+              {/* TablePagination */}
+              <TablePagination
+                component="div"
+                count={filteredUsers.length || 0}
+                page={page - 1} // Convert 1-based to 0-based
+                onPageChange={handleTablePaginationChange}
+                rowsPerPage={pageSize}
+                onRowsPerPageChange={handleRowsPerPageChange}
+                sx={{
+                  border: "none",
+                  "& .MuiTablePagination-toolbar": {
+                    padding: 0,
+                  },
+                  "& .MuiTablePagination-selectLabel": {
+                    fontSize: "0.875rem",
+                    color: "#6b7280",
+                  },
+                  "& .MuiTablePagination-displayedRows": {
+                    fontSize: "0.875rem",
+                    color: "#6b7280",
+                  },
+                  "& .MuiTablePagination-actions": {
+                    "& .MuiIconButton-root": {
+                      color: "#4c257e",
+                      "&:hover": {
+                        backgroundColor: "#f3f4f6",
+                      },
+                      "&.Mui-disabled": {
+                        color: "#9ca3af",
+                      },
+                    },
+                  },
+                }}
+              />
             </Box>
             <TableContainer component={Paper} className="border border-gray-200 rounded-lg">
               <Table sx={{ minWidth: 650 }} aria-label="clients table">
@@ -437,7 +433,7 @@ const ClientAdministration = () => {
                               },
                             }}
                           />
-                          <EyeIcon
+                          {/* <EyeIcon
                             style={{ cursor: "pointer", marginRight: 8 }}
                             color="action"
                             onClick={() => handleShowInfo(user, true)}
@@ -448,7 +444,7 @@ const ClientAdministration = () => {
                                 transition: "transform 0.2s ease-in-out",
                               },
                             }}
-                          />
+                          /> */}
                           <DeleteIcon
                             style={{ cursor: "pointer" }}
                             color="error"
@@ -501,6 +497,7 @@ const ClientAdministration = () => {
             agentUserName={dropdownUsers[selectedAgent] || "Agent"}
             clientData={editUserData}
             isEdit={editUserData ? true : false}
+            handleDialogClose={handleDialogClose}
           />
         </DialogContent>
       </Dialog>

@@ -71,6 +71,22 @@ const DynamicDashboard = () => {
   const renderSidebarButtons = () => {
     const buttons = [];
 
+    if (dashboardTabs?.includes("analytics")) {
+      buttons.push(
+        <button
+          key="dashboard"
+          onClick={() => handleComponentChange("dashboard")}
+          className={`px-4 py-3 mb-4 rounded-lg w-full text-left font-medium transition-all duration-200 ${
+            activeComponent === "dashboard"
+              ? "bg-blue-600 text-white shadow-md"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+          }`}
+        >
+          📊 Analytics
+        </button>
+      );
+    }
+
     // Add Chat button
     if (dashboardTabs?.includes("chat")) {
       buttons.push(
@@ -164,22 +180,6 @@ const DynamicDashboard = () => {
           }`}
         >
           💲 Material
-        </button>
-      );
-    }
-
-    if (dashboardTabs?.includes("analytics-dashboard")) {
-      buttons.push(
-        <button
-          key="dashboard"
-          onClick={() => handleComponentChange("dashboard")}
-          className={`px-4 py-3 mb-4 rounded-lg w-full text-left font-medium transition-all duration-200 ${
-            activeComponent === "dashboard"
-              ? "bg-blue-600 text-white shadow-md"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
-          }`}
-        >
-          📊 Analytics
         </button>
       );
     }

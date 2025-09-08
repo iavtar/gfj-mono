@@ -24,6 +24,7 @@ import {
   FormControl,
   TextField,
   InputAdornment,
+  TablePagination
 } from "@mui/material";
 import { toast } from "react-toastify";
 import ImageIcon from "@mui/icons-material/Image";
@@ -66,7 +67,7 @@ const LedgerTracker = () => {
   const [searchPayload, setSearchPayload] = useState({});
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedAgent, setSelectedAgent] = useState(
-    roles[0] === "business_admin" ? "all" : id
+    ["business_admin", "shipper"].includes(roles?.[0]) ? "all" : id
   );
   const [selectedClient, setSelectedClient] = useState("");
   const [dropdownUsers, setDropdownUsers] = useState({});
@@ -84,7 +85,7 @@ const LedgerTracker = () => {
   const [ledgerFormErrors, setLedgerFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   const fetchAllUsers = useCallback(async () => {
     try {
@@ -112,7 +113,7 @@ const LedgerTracker = () => {
   const fetchClients = useCallback(async (agentId, shouldAutoSelect = true) => {
     try {
       let response;
-      if (agentId === "all" && roles[0] === "business_admin") {
+      if (agentId === "all" && ["business_admin", "shipper"].includes(roles?.[0])) {
         response = await apiClient.get(`/businessAdmin/clients`);
       } else {
         response = await apiClient.get(
@@ -193,7 +194,7 @@ const LedgerTracker = () => {
   );
 
   useEffect(() => {
-    if (roles?.[0] === "business_admin") {
+    if (["business_admin", "shipper"].includes(roles?.[0])) {
       fetchAllUsers();
     }
     fetchClients(selectedAgent);
@@ -204,6 +205,17 @@ const LedgerTracker = () => {
     const newPage = direction === "next" ? page + 1 : page - 1;
     if (newPage < 1 || newPage > totalPages) return;
     setPage(newPage);
+  };
+
+  const handleTablePaginationChange = (event, newPage) => {
+    setPage(newPage + 1); // Convert 0-based to 1-based
+  };
+
+  const handleRowsPerPageChange = (event) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setPageSize(newRowsPerPage);
+    setPage(1); // Reset to first page when changing page size
+    // The useEffect will trigger fetchLedgers with the new pageSize
   };
 
   const handleAgentChange = (event) => {
@@ -457,7 +469,7 @@ const LedgerTracker = () => {
               </Box>
 
               {/* Agent Filter - Only for business_admin */}
-              {roles?.[0] === "business_admin" && (
+              {["business_admin", "shipper"].includes(roles?.[0]) && (
                 <Box className="w-full md:w-48">
                   <FormControl fullWidth variant="outlined">
                     <Select
@@ -591,11 +603,11 @@ const LedgerTracker = () => {
               </Box>
 
               {/* Results Count */}
-              <Box className="text-center md:text-right">
+              {/* <Box className="text-center md:text-right">
                 <Typography variant="body2" className="text-gray-600">
                   Showing {filteredLedgers.length} of {totalRecords} results
                 </Typography>
-              </Box>
+              </Box> */}
             </Box>
           </CardContent>
         </Card>
@@ -620,68 +632,40 @@ const LedgerTracker = () => {
                 Ledger List
               </Typography>
 
-              {/* Pagination Info */}
-              <Box className="flex items-center justify-between flex-wrap gap-4 mt-4">
-                <Typography variant="body2" className="text-gray-600">
-                  {(page - 1) * pageSize + 1}–
-                  {Math.min(page * pageSize, totalRecords)} of {totalRecords}
-                </Typography>
-                <Box className="flex gap-2 items-center">
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => handlePageChange("prev")}
-                    disabled={page === 1 || loading}
-                    sx={{
-                      borderRadius: "8px",
-                      textTransform: "none",
-                      fontWeight: 500,
-                      borderColor: "#4c257e",
+              {/* TablePagination */}
+              <TablePagination
+                component="div"
+                count={totalRecords}
+                page={page - 1} // Convert 1-based to 0-based
+                onPageChange={handleTablePaginationChange}
+                rowsPerPage={pageSize}
+                onRowsPerPageChange={handleRowsPerPageChange}
+                sx={{
+                  border: "none",
+                  "& .MuiTablePagination-toolbar": {
+                    padding: 0,
+                  },
+                  "& .MuiTablePagination-selectLabel": {
+                    fontSize: "0.875rem",
+                    color: "#6b7280",
+                  },
+                  "& .MuiTablePagination-displayedRows": {
+                    fontSize: "0.875rem",
+                    color: "#6b7280",
+                  },
+                  "& .MuiTablePagination-actions": {
+                    "& .MuiIconButton-root": {
                       color: "#4c257e",
                       "&:hover": {
-                        borderColor: "#3730a3",
                         backgroundColor: "#f3f4f6",
                       },
-                      "&:disabled": {
-                        borderColor: "#d1d5db",
+                      "&.Mui-disabled": {
                         color: "#9ca3af",
                       },
-                    }}
-                  >
-                    <ArrowBack />
-                  </Button>
-
-                  <Typography variant="body2" className="text-gray-600">
-                    Page {page} of {totalPages}
-                  </Typography>
-
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => handlePageChange("next")}
-                    disabled={
-                      page === totalPages || loading || totalPages === 0
-                    }
-                    sx={{
-                      borderRadius: "8px",
-                      textTransform: "none",
-                      fontWeight: 500,
-                      borderColor: "#4c257e",
-                      color: "#4c257e",
-                      "&:hover": {
-                        borderColor: "#3730a3",
-                        backgroundColor: "#f3f4f6",
-                      },
-                      "&:disabled": {
-                        borderColor: "#d1d5db",
-                        color: "#9ca3af",
-                      },
-                    }}
-                  >
-                    <ArrowForward />
-                  </Button>
-                </Box>
-              </Box>
+                    },
+                  },
+                }}
+              />
             </Box>
 
             {/* Loading State */}
@@ -843,23 +827,6 @@ const LedgerTracker = () => {
                 </Table>
               </TableContainer>
             )}
-
-            {/* Empty State
-          {!loading && ledgers.length === 0 && selectedClient && selectedClient !== "all" && selectedClient !== "no-clients" && (
-            <Box className="text-center py-12">
-              <ImageIcon className="!text-6xl text-gray-300 mb-4" />
-              <Typography variant="h6" className="text-gray-500 mb-2">
-                {searchTerm || statusFilter !== "all"
-                  ? "No matching transactions found"
-                  : "No transactions found for this client"}
-              </Typography>
-              <Typography variant="body2" className="text-gray-400">
-                {searchTerm || statusFilter !== "all"
-                  ? "Try adjusting your search criteria or filters."
-                  : "This client doesn't have any transactions yet."}
-              </Typography>
-            </Box>
-          )} */}
 
             {/* Empty State - No client selected */}
             {!loading && ledgers.length === 0 && !selectedClient && (
