@@ -111,10 +111,10 @@ const CreateQuotation = ({
     if (!isEdit) {
       if (materials?.length > 0 && client) {
         const goldMaterial = materials.find(
-          (item) => item?.id === 6
+          (item) => item?.id === 1
         );
         const usdToInr = materials.find(
-          (item) => item?.id === 7
+          (item) => item?.id === 2
         );
 
         setDetails({
