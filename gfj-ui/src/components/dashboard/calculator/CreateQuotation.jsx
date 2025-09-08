@@ -37,14 +37,7 @@ import apiClient from "../../../app/axiosConfig";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
-const purityToPercentMap = {
-  22: 92,
-  18: 75.5,
-  14: 59,
-  10: 43,
-  9: 38.5,
-  Silver: 100,
-};
+
 
 const roundRanges = {
   "0.50-2.30": "(0.5-2.3mm) Natural Diamonds Round",
@@ -87,6 +80,7 @@ const CreateQuotation = ({
   const [quotationNumber, setQuotationNumber] = useState("");
   const [description, setDescription] = useState("");
   const [descriptionError, setDescriptionError] = useState("");
+
   const [details, setDetails] = useState({
     goldPrice: "0.00",
     goldWastage: client?.goldWastagePercentage?.toFixed(2) || "0.00",
@@ -105,6 +99,14 @@ const CreateQuotation = ({
   });
   const [anchorEl, setAnchorEl] = useState(null);
   const [materials, setMaterials] = useState([]);
+  const [purityToPercentMap, setPurityToPercentMap] = useState({
+    22: 92,
+    18: 75.5,
+    14: 59,
+    10: 43,
+    9: 38.5,
+    Silver: 100,
+  });
   const exportRef = useRef();
 
   useEffect(() => {
@@ -116,6 +118,11 @@ const CreateQuotation = ({
         const usdToInr = materials.find(
           (item) => item?.id === 2
         );
+        const silverMaterial = materials.find(
+          (item) => item?.id === 3
+        );
+
+        setPurityToPercentMap(prev => ({ ...prev, Silver: parseFloat(silverMaterial?.price) || 100 }));
 
         setDetails({
           goldPrice: (goldMaterial?.price / usdToInr?.price)?.toFixed(2) || "0.00",
@@ -139,7 +146,6 @@ const CreateQuotation = ({
 
   useEffect(() => {
     if (isEdit) {
-      console.log("Details", quotationDetails);
       setDetails(quotationDetails);
       setShowValuesSection(true);
       setContentRows(quotationTable);
@@ -156,6 +162,8 @@ const CreateQuotation = ({
 
     fetchMaterials();
   }, [token]);
+
+
 
   const addContentRow = () => {
     if (!contentStarted) setContentStarted(true);
@@ -389,6 +397,7 @@ const CreateQuotation = ({
     // Calculate client section end position using table height
     const clientSectionEnd = doc.lastAutoTable.finalY + 2; // reduced gap
 
+    /*
     const diamondData = [
       ["Diamond Types", "VS2 si1", "VS G-H", "VS D-F", "Lab grown (VVS-VS)", "True VS D-F", "Si2-Si3 regular", "Si1- FG", "VVS D-F (top quality)", "Moissanite"],
       ["Price/ct", "$350/ct", "$400/ct", "$500/ct", "Custom", "$550/ct", "$300/ct", "$450/ct", "$650/ct", "Custom"],
@@ -405,9 +414,11 @@ const CreateQuotation = ({
       margin: { left: 14, right: 14 },
       tableWidth: 182,
     });
+    */
 
     // update descY so description starts after diamond section
-    const diamondSectionEnd = doc.lastAutoTable.finalY + 2; // gap below diamond section
+    // const diamondSectionEnd = doc.lastAutoTable.finalY + 2; // (Uncomment if diamond section should be shown)
+    const diamondSectionEnd = clientSectionEnd;
 
     // DESCRIPTION SECTION (side by side layout)
     const descY = diamondSectionEnd;

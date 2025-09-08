@@ -489,10 +489,13 @@ const QuotationAdministration = () => {
       setTotalsSection(data?.totalsSection || {});
       setQuotationClient(data?.client || {});
       setCalculatorData(data?.calculatorData || {});
-      const parentData = JSON.parse(parentQuotation?.data);
-      setParentQuotationDetails(parentData?.quotationDetails || {});
-      setParentTotalsSection(parentData?.totalsSection || {});
-      setParentContentRows(parentData?.quotationTable || []);
+
+      if (isChild) {
+        const parentData = JSON.parse(parentQuotation?.data);
+        setParentQuotationDetails(parentData?.quotationDetails || {});
+        setParentTotalsSection(parentData?.totalsSection || {});
+        setParentContentRows(parentData?.quotationTable || []);
+      }
 
       setIsChild(isChild || false);
       setOpenDialog(true);
