@@ -216,7 +216,7 @@ const CreateQuotation = ({
         100) *
       formValues?.weight;
     computedRows.push([
-      `Current Pure Gold Price \t [ ($${(parseFloat(formValues?.goldPrice || 0) / 10)} x ${formValues?.weight}ctw) x ${formValues?.purity}% ] `,
+      `Current Pure Gold Price \t [ ($${(parseFloat(formValues?.goldPrice || 0) / 10)} x ${formValues?.weight}g) x ${formValues?.purity}% ] `,
       currentGoldValue?.toFixed(2),
     ]);
 
