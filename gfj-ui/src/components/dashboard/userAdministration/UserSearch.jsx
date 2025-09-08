@@ -33,7 +33,6 @@ const UserSearch = ({setSearchPayload, setSearchOpen}) => {
       lastName: values?.lastName,
       email: values?.email,
       phoneNumber: values?.phoneNumber,
-      isActive: true
     };
 
     setSearchPayload(requestPayload)

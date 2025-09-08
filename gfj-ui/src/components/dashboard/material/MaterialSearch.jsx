@@ -4,29 +4,29 @@ import {
   Box,
   TextField,
   Button,
+  InputAdornment,
   Typography,
 } from "@mui/material";
 import { useFormik } from "formik";
 import CloseIcon from "@mui/icons-material/Close";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import "react-phone-input-2/lib/material.css";
 
 const initialFormData = {
-  shippingId: "",
-  trackingId: "",
-  note: "",
+  title: "",
+  price: "",
 };
 
-const ShippingSearch = ({setSearchPayload, setSearchOpen}) => {
+const MaterialSearch = ({ setSearchPayload, setSearchOpen }) => {
   const { user } = useSelector((state) => state.user.userDetails || {});
 
   const createSearchPayload = async (values) => {
     const requestPayload = {
-      shippingId: values?.shippingId,
-      trackingId: values?.trackingId,
-      note: values?.note,
+      title: values?.title,
+      price: values?.price,
     };
 
-    setSearchPayload(requestPayload)
+    setSearchPayload(requestPayload);
   };
 
   const formik = useFormik({
@@ -76,66 +76,58 @@ const ShippingSearch = ({setSearchPayload, setSearchOpen}) => {
           style={{
             display: "flex",
             flexWrap: "wrap",
-            gap: "16px",
+            gap: "24px",
             width: "100%",
           }}
         >
-          {/* Shipping ID */}
+          {/* title */}
           <div
-            style={{ flex: "0 0 calc(33% - 10px)", width: "calc(33% - 10px)" }}
+            style={{ flex: "0 0 calc(50% - 12px)", width: "calc(50% - 12px)" }}
           >
             <TextField
               fullWidth
-              label="Shipping ID"
-              name="shippingId"
-              value={formik.values.shippingId}
+              label="Title"
+              name="title"
+              value={formik.values.title}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              error={formik.touched.shippingId && Boolean(formik.errors.shippingId)}
-              helperText={formik.touched.shippingId && formik.errors.shippingId}
+              error={formik.touched.title && Boolean(formik.errors.title)}
+              helperText={formik.touched.title && formik.errors.title}
             />
           </div>
 
-          {/* Tracking ID */}
+          {/* Price */}
           <div
-            style={{ flex: "0 0 calc(33% - 10px)", width: "calc(33% - 10px)" }}
+            style={{ flex: "0 0 calc(50% - 12px)", width: "calc(50% - 12px)" }}
           >
             <TextField
               fullWidth
-              label="Tracking ID"
-              name="trackingId"
-              value={formik.values.trackingId}
+              label="Price"
+              name="price"
+              type="number"
+              value={formik.values.price}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              error={formik.touched.trackingId && Boolean(formik.errors.trackingId)}
-              helperText={formik.touched.trackingId && formik.errors.trackingId}
-            />
-          </div>
-
-          {/* Note */}
-          <div
-            style={{ flex: "0 0 calc(33% - 10px)", width: "calc(33% - 10px)" }}
-          >
-            <TextField
-              fullWidth
-              label="Note"
-              name="note"
-              value={formik.values.note}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={formik.touched.note && Boolean(formik.errors.note)}
-              helperText={formik.touched.note && formik.errors.note}
+              error={formik.touched.price && Boolean(formik.errors.price)}
+              helperText={formik.touched.price && formik.errors.price}
+              InputProps={
+                formik.values.price && {
+                  startAdornment: (
+                    <InputAdornment position="start">₹</InputAdornment>
+                  ),
+                }
+              }
             />
           </div>
         </div>
 
-        <Box mt={4} display="flex" justifyContent="flex-end">
+        <Box mt={4}>
           <Button
             variant="contained"
             type="submit"
             className="!bg-[var(--brand-purple)] hover:!bg-[var(--brand-dark-purple)] font-semibold transition-all"
           >
-            <Typography>Search Shipping</Typography>
+            Search Material
           </Button>
         </Box>
       </form>
@@ -143,4 +135,4 @@ const ShippingSearch = ({setSearchPayload, setSearchOpen}) => {
   );
 };
 
-export default ShippingSearch;
+export default MaterialSearch;

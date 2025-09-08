@@ -28,7 +28,8 @@ import {
   InputAdornment,
   Checkbox,
   Collapse,
-  TableRow as MuiTableRow
+  TableRow as MuiTableRow,
+  TablePagination
 } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
@@ -273,9 +274,8 @@ const QuotationAdministration = () => {
       </MuiTableRow>
     ));
   };
-  
-  const pageSize = 10;
 
+  const [pageSize, setPageSize] = useState(10);
   const fetchAllUsers = useCallback(async () => {
     try {
       const response = await apiClient.get(
@@ -367,7 +367,7 @@ const QuotationAdministration = () => {
     }
     fetchClients(selectedAgent);
     fetchQuotations(page);
-  }, [fetchQuotations, page, roles, fetchAllUsers, fetchClients, selectedAgent]);
+  }, [fetchQuotations, page, roles, fetchAllUsers, fetchClients, selectedAgent, pageSize]);
 
   const handleDialogClose = () => {
     setOpenDialog(false);
@@ -378,6 +378,17 @@ const QuotationAdministration = () => {
     const newPage = direction === "next" ? page + 1 : page - 1;
     if (newPage < 1 || newPage > totalPages) return;
     setPage(newPage);
+  };
+
+  const handleTablePaginationChange = (event, newPage) => {
+    setPage(newPage + 1); // Convert 0-based to 1-based
+  };
+
+  const handleRowsPerPageChange = (event) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setPageSize(newRowsPerPage);
+    setPage(1); // Reset to first page when changing page size
+    // The useEffect will trigger fetchQuotations with the new pageSize
   };
 
   const handleAgentChange = (event) => {
@@ -845,11 +856,11 @@ const QuotationAdministration = () => {
               </Box>
 
               {/* Results Count */}
-              <Box className="text-center md:text-right">
+              {/* <Box className="text-center md:text-right">
                 <Typography variant="body2" className="text-gray-600">
                   Showing {filteredQuotations.length} of {totalRecords} results
                 </Typography>
-              </Box>
+              </Box> */}
             </Box>
           </CardContent>
         </Card>
@@ -874,67 +885,40 @@ const QuotationAdministration = () => {
               Quotations List
             </Typography>
 
-            {/* Pagination Info */}
-            <Box className="flex items-center justify-between flex-wrap gap-4 mt-4">
-              <Typography variant="body2" className="text-gray-600">
-                {(page - 1) * pageSize + 1}–
-                {Math.min(page * pageSize, totalRecords)} of {totalRecords}
-              </Typography>
-
-              <Box className="flex gap-2 items-center">
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => handlePageChange("prev")}
-                  disabled={page === 1 || loading}
-                  sx={{
-                    borderRadius: "8px",
-                    textTransform: "none",
-                    fontWeight: 500,
-                    borderColor: "#4c257e",
+            {/* TablePagination */}
+            <TablePagination
+              component="div"
+              count={totalRecords}
+              page={page - 1} // Convert 1-based to 0-based
+              onPageChange={handleTablePaginationChange}
+              rowsPerPage={pageSize}
+              onRowsPerPageChange={handleRowsPerPageChange}
+              sx={{
+                border: "none",
+                "& .MuiTablePagination-toolbar": {
+                  padding: 0,
+                },
+                "& .MuiTablePagination-selectLabel": {
+                  fontSize: "0.875rem",
+                  color: "#6b7280",
+                },
+                "& .MuiTablePagination-displayedRows": {
+                  fontSize: "0.875rem",
+                  color: "#6b7280",
+                },
+                "& .MuiTablePagination-actions": {
+                  "& .MuiIconButton-root": {
                     color: "#4c257e",
                     "&:hover": {
-                      borderColor: "#3730a3",
                       backgroundColor: "#f3f4f6",
                     },
-                    "&:disabled": {
-                      borderColor: "#d1d5db",
+                    "&.Mui-disabled": {
                       color: "#9ca3af",
                     },
-                  }}
-                >
-                  <ArrowBack />
-                </Button>
-
-                <Typography variant="body2" className="text-gray-600">
-                  Page {page} of {totalPages}
-                </Typography>
-
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => handlePageChange("next")}
-                  disabled={page === totalPages || loading || totalPages === 0}
-                  sx={{
-                    borderRadius: "8px",
-                    textTransform: "none",
-                    fontWeight: 500,
-                    borderColor: "#4c257e",
-                    color: "#4c257e",
-                    "&:hover": {
-                      borderColor: "#3730a3",
-                      backgroundColor: "#f3f4f6",
-                    },
-                    "&:disabled": {
-                      borderColor: "#d1d5db",
-                      color: "#9ca3af",
-                    },
-                  }}
-                >
-                  <ArrowForward />
-                </Button>
-              </Box>
-            </Box>
+                  },
+                },
+              }}
+            />
           </Box>
 
           {/* Loading State */}

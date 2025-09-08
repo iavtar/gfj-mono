@@ -44,7 +44,6 @@ const ClientSearch = ({setSearchPayload, setSearchOpen}) => {
       email: values?.email,
       taxId: values?.taxId,
       einNumber: values?.einNumber,
-      isActive: true
     };
 
     setSearchPayload(requestPayload)

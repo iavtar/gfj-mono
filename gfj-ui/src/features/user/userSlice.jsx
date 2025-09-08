@@ -107,7 +107,7 @@ const userSlice = createSlice({
         const payload = action.payload;
         const userDetails = {
           ...payload,
-          dashboardTabs: [...(payload.dashboardTabs || []), "analytics-dashboard", "material", "shipping", "ledger", "chat"],
+          dashboardTabs: [...(payload.dashboardTabs || []), "chat"],
           user: userMap?.[payload?.roles?.[0]] || 'User'
         };
         // console.log("User Details", userDetails)

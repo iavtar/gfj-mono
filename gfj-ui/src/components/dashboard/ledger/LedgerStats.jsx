@@ -3,12 +3,12 @@ import React from 'react';
 const LedgerStats = ({ ledgers }) => {
   const getStats = () => {
     console.log("Ledgers", ledgers);
-    const totalTransactions = ledgers?.totalTransactions;
-    const totalCredit = ledgers?.totalCredit;
-    const totalCreditTransactions = ledgers?.totalCreditTransactions;
-    const totalDebit = ledgers?.totalDebit;
-    const totalDebitTransactions = ledgers?.totalDebitTransactions;
-    const balance = ledgers?.currentBalance;
+    const totalTransactions = ledgers?.totalTransactions || 0;
+    const totalCredit = ledgers?.totalCredit || 0;
+    const totalCreditTransactions = ledgers?.totalCreditTransactions || 0;
+    const totalDebit = ledgers?.totalDebit || 0;
+    const totalDebitTransactions = ledgers?.totalDebitTransactions || 0;
+    const balance = ledgers?.currentBalance || 0;
 
     return {
       totalTransactions,

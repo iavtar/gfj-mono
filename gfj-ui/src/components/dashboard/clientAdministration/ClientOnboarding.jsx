@@ -65,6 +65,7 @@ const ClientOnboarding = ({
   agentId,
   clientData = {},
   isEdit,
+  handleDialogClose,
 }) => {
   const { roles } = useSelector((state) => state.user.userDetails || {});
 
@@ -84,11 +85,11 @@ const ClientOnboarding = ({
       } else {
         response = await apiClient.post(`agent/client`, payload);
       }
-      console.log(response)
 
       if (response?.status === 200) {
-        toast.success("Client added successfully!");
+        toast.success(isEdit ? "Client updated successfully!" : "Client added successfully!");
         // resetForm();
+        handleDialogClose();
       } else {
         toast.error(response?.data?.message || "Submission failed");
       }

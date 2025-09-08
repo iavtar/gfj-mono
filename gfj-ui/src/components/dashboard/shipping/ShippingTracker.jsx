@@ -72,7 +72,7 @@ const ShippingTracker = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedAgent, setSelectedAgent] = useState(
-    roles[0] === "business_admin" ? "all" : id
+    ["business_admin", "shipper"].includes(roles?.[0]) ? "all" : id
   );
   const [selectedClient, setSelectedClient] = useState("all");
   const [dropdownUsers, setDropdownUsers] = useState({});
@@ -117,7 +117,7 @@ const ShippingTracker = () => {
   const fetchClients = useCallback(async (agentId) => {
     try {
       let response;
-      if (agentId === "all" && roles[0] === "business_admin") {
+      if (agentId === "all" && ["business_admin", "shipper"].includes(roles?.[0])) {
         response = await apiClient.get(`/businessAdmin/clients`);
       } else {
         response = await apiClient.get(
@@ -175,7 +175,7 @@ const ShippingTracker = () => {
   );
 
   useEffect(() => {
-    if (roles?.[0] === "business_admin") {
+    if (["business_admin", "shipper"].includes(roles?.[0])) {
       fetchAllUsers();
     }
     fetchClients(selectedAgent);
@@ -492,8 +492,8 @@ const ShippingTracker = () => {
                 />
               </Box>
 
-              {/* Agent Filter - Only for business_admin */}
-              {roles?.[0] === "business_admin" && (
+              {/* Agent Filter - Only for business_admin and Shipper */}
+              {["business_admin", "shipper"].includes(roles?.[0]) && (
                 <Box className="w-full md:w-48">
                   <FormControl fullWidth variant="outlined">
                     <Select
@@ -606,11 +606,11 @@ const ShippingTracker = () => {
               </Box>
 
               {/* Results Count */}
-              <Box className="text-center md:text-right">
+              {/* <Box className="text-center md:text-right">
                 <Typography variant="body2" className="text-gray-600">
                   Showing {filteredShipments.length} of {totalRecords} results
                 </Typography>
-              </Box>
+              </Box> */}
             </Box>
           </CardContent>
         </Card>

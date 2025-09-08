@@ -86,6 +86,7 @@ const CreateQuotation = ({
   const [imageUrl, setImageUrl] = useState();
   const [quotationNumber, setQuotationNumber] = useState("");
   const [description, setDescription] = useState("");
+  const [descriptionError, setDescriptionError] = useState("");
   const [details, setDetails] = useState({
     goldPrice: "0.00",
     goldWastage: client?.goldWastagePercentage?.toFixed(2) || "0.00",
@@ -110,11 +111,14 @@ const CreateQuotation = ({
     if (!isEdit) {
       if (materials?.length > 0 && client) {
         const goldMaterial = materials.find(
-          (item) => item?.title?.toLowerCase() === "gold"
+          (item) => item?.id === 6
+        );
+        const usdToInr = materials.find(
+          (item) => item?.id === 7
         );
 
         setDetails({
-          goldPrice: (goldMaterial?.price / 86.46)?.toFixed(2) || "0.00",
+          goldPrice: (goldMaterial?.price / usdToInr?.price)?.toFixed(2) || "0.00",
           goldWastage: client?.goldWastagePercentage?.toFixed(2) || "0.00",
           weight: "15.00",
           diamondSetting: client?.diamondSettingPrice?.toFixed(2) || "0.00",
@@ -212,7 +216,7 @@ const CreateQuotation = ({
         100) *
       formValues?.weight;
     computedRows.push([
-      `Current Pure Gold Price \t [ ($${(parseFloat(formValues?.goldPrice || 0) / 10)} x ${formValues?.weight}g) x ${formValues?.purity}% ] `,
+      `Current Pure Gold Price \t [ ($${(parseFloat(formValues?.goldPrice || 0) / 10)} x ${formValues?.weight}ctw) x ${formValues?.purity}% ] `,
       currentGoldValue?.toFixed(2),
     ]);
 
@@ -237,7 +241,7 @@ const CreateQuotation = ({
       const multiplier = ndrRange?.round?.[key] || 0;
       const res = (weight * multiplier)?.toFixed(2);
       if (res > 0) {
-        label = `${label} \t [ ${weight}g x $${multiplier} ]`;
+        label = `${label} \t [ ${weight}ctw x $${multiplier} ]`;
         computedRows.push([label, res]);
       }
     });
@@ -248,7 +252,7 @@ const CreateQuotation = ({
       const multiplier = ndrRange?.baguettes?.[key] || 0;
       const res = (weight * multiplier)?.toFixed(2);
       if (res > 0) {
-        label = `${label} \t [ ${weight}g x $${multiplier} ]`;
+        label = `${label} \t [ ${weight}ctw x $${multiplier} ]`;
         computedRows.push([label, res]);
       }
     });
@@ -266,7 +270,6 @@ const CreateQuotation = ({
   };
 
   useEffect(() => {
-    console.log("Details:", details);
     const sum = contentRows?.reduce((acc, row) => {
       if (row[0] === "Profit & Labour" || row[0] === "Total") return acc;
       const value = parseFloat(row[1]);
@@ -419,11 +422,11 @@ const CreateQuotation = ({
     doc.setFillColor(240, 240, 240); // subtle gray
     doc.setTextColor(0, 0, 0);
 
+    const maxWidth = 142; // remaining width after title
     let descEndY = descY + 6; // start after header bar
     if (description && description.trim()) {
       const lineHeight = 5; // reduced spacing
       const descContentLines = description.split("\n");
-      const maxWidth = 142; // remaining width after title
 
       descContentLines.forEach((line, i) => {
         // Check if line needs to be wrapped
@@ -625,6 +628,16 @@ const CreateQuotation = ({
   };
 
   const handleSaveQuotation = async () => {
+    // Validate description field
+    if (!description || description.trim() === "") {
+      setDescriptionError("Description is required");
+      toast.error("Please enter a quotation description");
+      return;
+    }
+
+    // Clear any previous error
+    setDescriptionError("");
+
     setIsSaving(true);
     try {
       const data = {
@@ -685,19 +698,21 @@ const CreateQuotation = ({
           },
         });
       }
-      console.log("Save Quotation Response", response);
       if (response?.status === 200) {
         if (isChild) {
           setQuotationNumber(quotationId);
           uploadImage(quotationId, false);
-          uploadImage(quotationId, true);
+          // uploadImage(quotationId, true);
+          toast.success(`Quotation Saved Successfully!`);
         } else {
           const newQuotationNumber = response?.data?.quotationId || quotationId;
           setQuotationNumber(newQuotationNumber);
           uploadImage(newQuotationNumber);
+          toast.success(`Quotation Saved Successfully!`);
         }
+      } else {
+        toast.error("Error While Saving Quotation!");
       }
-      toast.success(`Quotation Saved Successfully!`);
     } catch (error) {
       console.error("Error Saving Quotation", error);
       toast.error("Error While Saving Quotation!");
@@ -706,7 +721,7 @@ const CreateQuotation = ({
     }
   };
 
-  const downloadPDF = async () => {
+  const downloadPDF = async (generateForShipper) => {
     const doc = await generateQuotationPDF(
       details,
       contentRows,
@@ -718,7 +733,7 @@ const CreateQuotation = ({
     doc.save(`${client?.clientName}_quotation_${Date.now()}.pdf`);
   };
 
-  const downloadImage = async () => {
+  const downloadImage = async (generateForShipper) => {
     const doc = await generateQuotationPDF(
       details,
       contentRows,
@@ -755,7 +770,7 @@ const CreateQuotation = ({
         subtotal,
         profitAndLabour,
         total,
-        generateForShipper = false,
+        generateForShipper,
         quotationId
       );
       const pdfBlob = doc.output("blob");
@@ -792,7 +807,7 @@ const CreateQuotation = ({
             let response;
             if (isChild) {
               response = await apiClient.post(
-                `/agent/finalQuotation/upload?quotationId=${quotationId}&shipper=${generateForShipper}`,
+                `/agent/finalQuotation/upload?quotationId=${quotationId}`,
                 formData,
                 {
                   headers: {
@@ -1190,9 +1205,17 @@ const CreateQuotation = ({
                     >
                       <TextField
                         value={description}
-                        onChange={(e) => setDescription(e.target.value)}
+                        onChange={(e) => {
+                          setDescription(e.target.value);
+                          // Clear error when user starts typing
+                          if (descriptionError) {
+                            setDescriptionError("");
+                          }
+                        }}
                         placeholder="Enter quotation description..."
                         multiline
+                        error={!!descriptionError}
+                        helperText={descriptionError}
                         // rows={2}
                         sx={{
                           width: "100%",
@@ -1496,7 +1519,7 @@ const CreateQuotation = ({
                           <MenuItem
                             onClick={() => {
                               setAnchorEl(null);
-                              downloadPDF();
+                              downloadPDF(false);
                             }}
                           >
                             Download as PDF
@@ -1504,7 +1527,7 @@ const CreateQuotation = ({
                           <MenuItem
                             onClick={() => {
                               setAnchorEl(null);
-                              downloadImage();
+                              downloadImage(false);
                             }}
                           >
                             Download as Image

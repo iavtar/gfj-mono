@@ -41,7 +41,7 @@ const initialFormData = {
   phoneNumber: "",
 };
 
-const UserOnboarding = ({ userData, isEdit }) => {
+const UserOnboarding = ({ userData, isEdit, handleDialogClose }) => {
   const { user, token } = useSelector((state) => state.user.userDetails || {});
   const [showPassword, setShowPassword] = useState(false);
 
@@ -71,8 +71,9 @@ const UserOnboarding = ({ userData, isEdit }) => {
 
       if (response?.status === 200) {
         toast.success(`${user} Updated Successfully!`);
+        handleDialogClose();
       } else {
-        toast.error(`Failed to Updated ${user}!`);
+        toast.error(`Failed to Update ${user}!`);
       }
     } else {
       if (user === "Business Admin") {
@@ -95,9 +96,9 @@ const UserOnboarding = ({ userData, isEdit }) => {
         });
       }
 
-      console.log("Add Update Response", response)
       if (response?.status === 200) {
         toast.success(`${user} Added Successfully!`);
+        handleDialogClose();
       } else {
         toast.error(`Failed to Add ${user}!`);
       }

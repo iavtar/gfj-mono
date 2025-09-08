@@ -1,149 +1,192 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
-import "react-phone-input-2/lib/material.css";
-import HeaderCard from "../../HeaderCard";
-import apiClient from "../../../app/axiosConfig";
-import { toast } from "react-toastify";
+import axios from "axios";
 import {
   Box,
   TextField,
   Button,
   Typography,
+  Dialog,
+  DialogContent,
+  IconButton,
+  Card,
+  CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Paper,
-  Grid,
+  Avatar,
+  Chip,
+  InputAdornment,
+  TablePagination
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import EditIcon from "@mui/icons-material/Edit";
+import ToggleOnIcon from "@mui/icons-material/ToggleOn";
+import ToggleOffIcon from "@mui/icons-material/ToggleOff";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import ArrowForward from "@mui/icons-material/ArrowForward";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import ArrowLeftIcon from "@mui/icons-material/ArrowLeft";
+import ArrowRightIcon from "@mui/icons-material/ArrowRight";
+import SearchIcon from "@mui/icons-material/Search";
+import { Formik, Form, Field } from "formik";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/material.css";
+import MaterialChange from "./MaterialChange";
+import HeaderCard from "../../HeaderCard";
+import apiClient from "../../../app/axiosConfig";
+import { toast } from "react-toastify";
+import MaterialSearch from "./MaterialSearch";
 
-const StyledContainer = styled(Box)(({ theme }) => ({
-  width: "100%",
-  flex: 1,
-  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: theme.spacing(4),
-}));
-
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4),
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  width: "100%",
-  maxWidth: 400,
-  backgroundColor: "rgba(255, 255, 255, 0.9)",
-  backdropFilter: "blur(10px)",
-  borderRadius: theme.spacing(2),
-  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
-}));
+const columns = [
+  { columnLabel: "Title", columnKey: "title" },
+  { columnLabel: "Price", columnKey: "price" },
+  { columnLabel: "Actions", columnKey: "actions" },
+];
 
 const Material = () => {
   const { user, token } = useSelector((state) => state.user.userDetails || {});
   const [materials, setMaterials] = useState([]);
-  const [price, setPrice] = useState("");
+  const [editMaterialData, seteditMaterialData] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [serachPayload, setSearchPayload] = useState({});
 
-  useEffect(() => {
-    const fetchMaterials = async () => {
+  const fetchMaterials = useCallback(
+    async (values = {}, currentPage = 1) => {
       try {
         const response = await apiClient.get("/businessAdmin/materials");
-        console.log("Materials:", response?.data);
         setMaterials(response?.data);
+        setPage(currentPage);
+        setTotalPages(Math.ceil((response?.data?.totalRecords || 0) / pageSize));
       } catch (error) {
         console.error("Error fetching materials:", error);
+        setMaterials([]);
+        setTotalPages(0);
       }
-    };
-
-    fetchMaterials();
-  }, [token]);
+    },
+    [token]
+  );
 
   useEffect(() => {
-    if (materials.length > 0) {
-      setPrice(materials[0].price.toString());
+    fetchMaterials();
+  }, [fetchMaterials, pageSize]);
+
+  const handleAddOrUpdate = (material, isEdit) => {
+    if (isEdit) {
+      seteditMaterialData(material);
+    } else {
+      seteditMaterialData();
     }
-  }, [materials]);
+    setOpenDialog(true);
+  };
 
-  const handleUpdate = async () => {
-    const updatedMaterials = materials.map((material) =>
-      material.id === 1 ? { ...material, price: parseFloat(price) } : material
-    );
-    setMaterials(updatedMaterials);
+  const handleDialogClose = () => {
+    setOpenDialog(false);
+    seteditMaterialData(null);
+    fetchMaterials()
+  };
 
-    const requestBody = {
-      materials: updatedMaterials,
-    };
+  const handlePageChange = (direction) => {
+    const newPage = direction === "next" ? page + 1 : page - 1;
+    if (newPage < 1 || newPage > totalPages) return;
+    setPage(newPage);
+    fetchMaterials({}, newPage);
+  };
 
+  const handleTablePaginationChange = (event, newPage) => {
+    setPage(newPage + 1); // Convert 0-based to 1-based
+  };
+
+  const handleRowsPerPageChange = (event) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setPageSize(newRowsPerPage);
+    setPage(1); // Reset to first page when changing page size
+    // The useEffect will trigger fetchMaterials with the new pageSize
+  };
+
+  const filteredMaterials = materials?.filter((material) =>
+    columns
+      .filter((col) => col.columnKey !== "actions")
+      .some((col) =>
+        String(material[col.columnKey] || "")
+          .toLowerCase()
+          .includes(search.toLowerCase())
+      )
+  );
+
+  const handleDeleteMaterial = async (materialObj) => {
     try {
-      const response = await apiClient.post(
-        `/businessAdmin/updateMaterials`,
-        requestBody,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiClient.delete(`/businessAdmin/deleteMaterial`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        data: {
+          id: Number(materialObj?.id),
+        },
+      });
 
       if (response?.status === 200) {
-        toast.success("Material updated successfully");
+        fetchMaterials();
+        toast.success(`Material deleted successfully`);
       } else {
-        toast.error("Failed to update material");
+        toast.error(`Failed to delete material`);
       }
     } catch (error) {
-      toast.error("Failed to update material");
+      console.error("Delete material failed:", error);
+      toast.error("Something went wrong while deleting material");
     }
   };
 
   return (
-    <Box className="bg-white h-full flex flex-col overflow-hidden">
-      <div className="flex-shrink-0">
+    <div className="h-full flex flex-col bg-gray-50">
+      {/* Header Section - Sticky */}
+      <div className="sticky top-0 z-10 bg-gray-50">
         <HeaderCard
-          icon="💍"
-          title={`Material`}
-          description={"Update material price"}
+          title={`Materials`}
+          description={`Add or update materials`}
+          icon="👥"
         />
       </div>
-      <StyledContainer>
-        <StyledPaper elevation={0} sx={{ border: "1px solid #e5e7eb", boxShadow: "none" }}>
-          <Typography
-            variant="h4"
-            component="h1"
-            gutterBottom
-            sx={{
-              mb: 3,
-              background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              textAlign: 'center',
-              fontWeight: 'bold',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.1)',
-              letterSpacing: '1px',
-            }}
-          >
-            Gold Price
-          </Typography>
-          <Box component="form" sx={{ mt: 1, width: "100%" }} noValidate>
+
+      {/* Scrollable Content Container */}
+      <div className="flex-1 overflow-y-auto px-6 pb-6">
+        {searchOpen && (
+          <Box className="mb-6 p-6 bg-white rounded-lg border border-gray-200">
+            <MaterialSearch
+              setSearchPayload={setSearchPayload}
+              setSearchOpen={setSearchOpen}
+            />
+          </Box>
+        )}
+
+        {/* Search Bar */}
+        <Box className="mb-6 p-6 bg-white rounded-lg border border-gray-200">
+          <Box className="flex items-center gap-4">
             <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="price"
-              label="Gold Price"
-              name="price"
-              type="number"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              label="Search"
+              variant="outlined"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               InputProps={{
-                startAdornment: (
-                  <Typography variant="body1" sx={{ mr: 1 }}>
-                    ₹
-                  </Typography>
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {/* <IconButton onClick={() => setSearchOpen(true)}>
+                      <SearchIcon />
+                    </IconButton> */}
+                  </InputAdornment>
                 ),
-              }}
-              sx={{
-                mb: 3,
-                "& .MuiOutlinedInput-root": {
+                sx: {
                   borderRadius: "8px",
                   backgroundColor: "#f8fafc",
                   "&:hover fieldset": {
@@ -154,36 +197,193 @@ const Material = () => {
                   },
                 },
               }}
+              sx={{ flex: 1 }}
             />
+
             <Button
               type="button"
-              fullWidth
               variant="contained"
+              onClick={() => handleAddOrUpdate({}, false)}
+              className="h-12 !bg-[var(--brand-purple)] hover:!bg-[var(--brand-dark-purple)]"
               sx={{
-                mt: 3,
-                mb: 2,
-                background: "linear-gradient(45deg, #667eea 30%, #764ba2 90%)",
+                borderRadius: "8px",
+                textTransform: "none",
+                fontWeight: 600,
+                boxShadow: "none",
                 "&:hover": {
-                  background:
-                    "linear-gradient(45deg, #764ba2 30%, #667eea 90%)",
                   boxShadow: "none",
                   transform: "translateY(-1px)",
                 },
-                color: "white",
-                fontWeight: "bold",
-                py: 1.5,
-                borderRadius: "8px",
-                boxShadow: "none",
                 transition: "all 0.2s ease-in-out",
               }}
-              onClick={handleUpdate}
             >
-              Update Price
+              <AddIcon className="mr-2" />
+              Add Material
             </Button>
           </Box>
-        </StyledPaper>
-      </StyledContainer>
-    </Box>
+        </Box>
+
+        {/* Table Section */}
+        <Card className="border border-gray-200 rounded-lg">
+          <CardContent className="p-6">
+            <Box className="flex justify-between items-center mb-6">
+              <Typography
+                variant="h5"
+                className="text-[#4c257e] font-bold flex items-center"
+              >
+                Material List
+              </Typography>
+              {/* TablePagination */}
+              <TablePagination
+                component="div"
+                count={filteredMaterials?.length || 0}
+                page={page - 1} // Convert 1-based to 0-based
+                onPageChange={handleTablePaginationChange}
+                rowsPerPage={pageSize}
+                onRowsPerPageChange={handleRowsPerPageChange}
+                sx={{
+                  border: "none",
+                  "& .MuiTablePagination-toolbar": {
+                    padding: 0,
+                  },
+                  "& .MuiTablePagination-selectLabel": {
+                    fontSize: "0.875rem",
+                    color: "#6b7280",
+                  },
+                  "& .MuiTablePagination-displayedRows": {
+                    fontSize: "0.875rem",
+                    color: "#6b7280",
+                  },
+                  "& .MuiTablePagination-actions": {
+                    "& .MuiIconButton-root": {
+                      color: "#4c257e",
+                      "&:hover": {
+                        backgroundColor: "#f3f4f6",
+                      },
+                      "&.Mui-disabled": {
+                        color: "#9ca3af",
+                      },
+                    },
+                  },
+                }}
+              />
+            </Box>
+            <TableContainer
+              component={Paper}
+              className="border border-gray-200 rounded-lg"
+            >
+              <Table sx={{ minWidth: 650 }} aria-label="materials table">
+                <TableHead>
+                  <TableRow className="!bg-gradient-to-r !from-purple-50 !to-indigo-100">
+                    {columns.map((col) => (
+                      <TableCell
+                        key={col.columnKey}
+                        className="!font-bold !text-[#4c257e]"
+                        sx={{
+                          fontSize: "0.95rem",
+                          borderBottom: "1px solid #e5e7eb",
+                        }}
+                      >
+                        {col.columnLabel}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredMaterials
+                    ?.slice((page - 1) * pageSize, page * pageSize)
+                    .map((material, index) => (
+                      <TableRow
+                        key={material?.id}
+                        className={`hover:!bg-gray-50 transition-colors ${
+                          index % 2 === 0 ? "!bg-white" : "!bg-gray-25"
+                        }`}
+                        sx={{ "&:hover": { backgroundColor: "#f9fafb" } }}
+                      >
+                        <TableCell sx={{ borderBottom: "1px solid #f3f4f6" }}>
+                          {material.title}
+                        </TableCell>
+                        <TableCell sx={{ padding: "12px 16px" }}>
+                          <Typography
+                            variant="body2"
+                            className="font-semibold text-green-600"
+                          >
+                            ₹ {material?.price?.toFixed(2) || "0.00"}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ borderBottom: "1px solid #f3f4f6" }}>
+                          <EditIcon
+                            style={{ cursor: "pointer", marginRight: 8 }}
+                            color="primary"
+                            onClick={() => handleAddOrUpdate(material, true)}
+                            titleAccess="Edit"
+                            sx={{
+                              "&:hover": {
+                                transform: "scale(1.1)",
+                                transition: "transform 0.2s ease-in-out",
+                              },
+                            }}
+                          />
+                          <DeleteIcon
+                            disabled={[6, 7].includes(material?.id)}
+                            style={{ cursor: [6, 7].includes(material?.id) ? "not-allowed" : "pointer" }}
+                            color={[6, 7].includes(material?.id) ? "disabled" : "error"}
+                            onClick={() => {
+                              if ([6, 7].includes(material?.id)) return;
+                              handleDeleteMaterial(material);
+                            }}
+                            titleAccess={[6, 7].includes(material?.id) ? "Delete (Disabled)" : "Delete"}
+                            sx={{
+                              opacity: [6, 7].includes(material?.id) ? 0.5 : 1,
+                              "&:hover": {
+                                transform: [6, 7].includes(material?.id) ? "none" : "scale(1.1)",
+                                transition: [6, 7].includes(material?.id) ? "none" : "transform 0.2s ease-in-out",
+                              },
+                            }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      </div>
+      {/* Dialog remains unchanged */}
+      <Dialog
+        open={openDialog}
+        onClose={handleDialogClose}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ className: "rounded-xl shadow-lg p-4" }}
+        TransitionProps={{ timeout: 300 }}
+      >
+        <Box className="flex justify-between items-center p-4">
+          {editMaterialData && (
+            <Typography variant="h6" className="text-[var(--brand-purple)]">
+              Edit Material
+            </Typography>
+          )}
+          {!editMaterialData && (
+            <Typography variant="h6" className="text-[var(--brand-purple)]">
+              Add Material
+            </Typography>
+          )}
+          <IconButton onClick={handleDialogClose}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <DialogContent>
+          <MaterialChange
+            materialData={editMaterialData}
+            isEdit={editMaterialData ? true : false}
+            handleDialogClose={handleDialogClose}
+            onClose={handleDialogClose}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 
