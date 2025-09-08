@@ -174,7 +174,7 @@ public class ShippingServiceImpl implements ShippingService {
     }
 
     @Override
-    public PagedUserResponse<ShippingTracker> searchShippingTrackers(ShippingSearchRequest searchRequest) {
+    public PagedUserResponse<Map<String, Object>> searchShippingTrackers(ShippingSearchRequest searchRequest) {
         log.info("Searching shipping trackers with criteria: {}", searchRequest);
         
         int page = searchRequest.getOffset() / searchRequest.getSize();
@@ -194,12 +194,38 @@ public class ShippingServiceImpl implements ShippingService {
             pageable
         );
         
-        log.info("Found {} shipping trackers matching search criteria", shippingTrackerPage.getNumberOfElements());
-        return PagedUserResponse.from(shippingTrackerPage, searchRequest.getOffset(), searchRequest.getSize());
+        // Transform ShippingTracker entities to the same rich structure as getAllShipping
+        List<Map<String, Object>> shippingGroups = shippingTrackerPage.getContent().stream()
+                .map(shippingTracker -> {
+                    String shippingId = shippingTracker.getShippingId();
+                    List<Quotation> quotations = quotationRepository.findAllByShippingId(shippingId);
+                    
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("shippingId", shippingId);
+                    item.put("quotations", quotations);
+                    item.put("count", quotations.size());
+                    item.put("status", shippingTracker.getStatus());
+                    item.put("trackingId", shippingTracker.getTrackingId() != null ? shippingTracker.getTrackingId() : "");
+                    if (!quotations.isEmpty()) {
+                        item.put("clientDetails", clientRepository.findById(quotations.get(0).getClientId()));
+                    }
+                    return item;
+                })
+                .collect(Collectors.toList());
+        
+        // Create a new Page with the transformed content
+        Page<Map<String, Object>> transformedPage = new PageImpl<>(
+            shippingGroups, 
+            pageable, 
+            shippingTrackerPage.getTotalElements()
+        );
+        
+        log.info("Found {} shipping trackers matching search criteria", shippingGroups.size());
+        return PagedUserResponse.from(transformedPage, searchRequest.getOffset(), searchRequest.getSize());
     }
 
     @Override
-    public PagedUserResponse<ShippingTracker> searchShippingTrackersByText(ShippingSearchRequest searchRequest) {
+    public PagedUserResponse<Map<String, Object>> searchShippingTrackersByText(ShippingSearchRequest searchRequest) {
         log.info("Searching shipping trackers by text: {}", searchRequest.getSearchText());
         
         int page = searchRequest.getOffset() / searchRequest.getSize();
@@ -213,8 +239,34 @@ public class ShippingServiceImpl implements ShippingService {
             pageable
         );
         
-        log.info("Found {} shipping trackers matching text search criteria", shippingTrackerPage.getNumberOfElements());
-        return PagedUserResponse.from(shippingTrackerPage, searchRequest.getOffset(), searchRequest.getSize());
+        // Transform ShippingTracker entities to the same rich structure as getAllShipping
+        List<Map<String, Object>> shippingGroups = shippingTrackerPage.getContent().stream()
+                .map(shippingTracker -> {
+                    String shippingId = shippingTracker.getShippingId();
+                    List<Quotation> quotations = quotationRepository.findAllByShippingId(shippingId);
+                    
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("shippingId", shippingId);
+                    item.put("quotations", quotations);
+                    item.put("count", quotations.size());
+                    item.put("status", shippingTracker.getStatus());
+                    item.put("trackingId", shippingTracker.getTrackingId() != null ? shippingTracker.getTrackingId() : "");
+                    if (!quotations.isEmpty()) {
+                        item.put("clientDetails", clientRepository.findById(quotations.get(0).getClientId()));
+                    }
+                    return item;
+                })
+                .collect(Collectors.toList());
+        
+        // Create a new Page with the transformed content
+        Page<Map<String, Object>> transformedPage = new PageImpl<>(
+            shippingGroups, 
+            pageable, 
+            shippingTrackerPage.getTotalElements()
+        );
+        
+        log.info("Found {} shipping trackers matching text search criteria", shippingGroups.size());
+        return PagedUserResponse.from(transformedPage, searchRequest.getOffset(), searchRequest.getSize());
     }
 
 }

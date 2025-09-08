@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -48,7 +49,7 @@ public class ShippingController {
     public ResponseEntity<?> searchShippingTrackers(@RequestBody ShippingSearchRequest searchRequest) {
         try {
             log.info("Searching shipping trackers with criteria: {}", searchRequest);
-            PagedUserResponse<ShippingTracker> shippingTrackers = shippingService.searchShippingTrackers(searchRequest);
+            PagedUserResponse<Map<String, Object>> shippingTrackers = shippingService.searchShippingTrackers(searchRequest);
             return ResponseEntity.ok(shippingTrackers);
         } catch (Exception e) {
             log.error("Error searching shipping trackers: {}", e.getMessage(), e);
@@ -63,7 +64,7 @@ public class ShippingController {
     public ResponseEntity<?> searchShippingTrackersByText(@RequestBody ShippingSearchRequest searchRequest) {
         try {
             log.info("Searching shipping trackers by text: {}", searchRequest.getSearchText());
-            PagedUserResponse<ShippingTracker> shippingTrackers = shippingService.searchShippingTrackersByText(searchRequest);
+            PagedUserResponse<Map<String, Object>> shippingTrackers = shippingService.searchShippingTrackersByText(searchRequest);
             return ResponseEntity.ok(shippingTrackers);
         } catch (Exception e) {
             log.error("Error searching shipping trackers by text: {}", e.getMessage(), e);
@@ -103,7 +104,7 @@ public class ShippingController {
                     .sortDirection(sortDirection)
                     .build();
             
-            PagedUserResponse<ShippingTracker> shippingTrackers = shippingService.searchShippingTrackers(searchRequest);
+            PagedUserResponse<Map<String, Object>> shippingTrackers = shippingService.searchShippingTrackers(searchRequest);
             return ResponseEntity.ok(shippingTrackers);
         } catch (Exception e) {
             log.error("Error searching shipping trackers with query parameters: {}", e.getMessage(), e);
