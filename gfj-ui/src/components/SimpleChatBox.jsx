@@ -32,6 +32,7 @@ const SimpleChatBox = ({ currentUser }) => {
   const messagesEndRef = useRef(null);
   const serviceWorkerRef = useRef(null);
   const [isPolling, setIsPolling] = useState(false);
+  const pollingIntervalRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,6 +41,46 @@ const SimpleChatBox = ({ currentUser }) => {
   // Helper function to safely check if service worker controller is available
   const isServiceWorkerControllerAvailable = () => {
     return navigator.serviceWorker && navigator.serviceWorker.controller;
+  };
+
+  // Fallback polling mechanism that works without service workers
+  const startFallbackPolling = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+    
+    console.log('Starting fallback polling...');
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        if (!token) return;
+        
+        const response = await apiClient.get('/chat/messages');
+        const newMessages = response.data || [];
+        
+        setMessages(prevMessages => {
+          const existingIds = new Set(prevMessages.map(msg => msg.id));
+          const messagesToAdd = newMessages.filter(msg => !existingIds.has(msg.id));
+          
+          if (messagesToAdd.length > 0) {
+            console.log('New messages received via fallback polling:', messagesToAdd.length);
+            return [...prevMessages, ...messagesToAdd];
+          }
+          return prevMessages;
+        });
+      } catch (error) {
+        console.error('Fallback polling error:', error);
+      }
+    }, 2000);
+    
+    setIsPolling(true);
+  };
+
+  const stopFallbackPolling = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    setIsPolling(false);
   };
 
   useEffect(() => {
@@ -70,45 +111,72 @@ const SimpleChatBox = ({ currentUser }) => {
   useEffect(() => {
     return () => {
       stopPolling();
+      stopFallbackPolling();
     };
   }, []);
 
   const initializeServiceWorker = async () => {
     try {
       if ('serviceWorker' in navigator) {
+        console.log('Registering service worker...');
         const registration = await navigator.serviceWorker.register('/chat-worker.js');
         serviceWorkerRef.current = registration;
+        
+        console.log('Service worker registered:', registration);
         
         // Listen for messages from service worker
         navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
         
-        // console.log('Chat Service Worker registered');
-        
         // Wait for service worker to be ready and controlling the page
         if (registration.waiting) {
-          // If there's a waiting service worker, activate it
+          console.log('Activating waiting service worker...');
           registration.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
         
-        // Wait for the service worker to be controlling the page
+        // Check if service worker is already controlling
         if (isServiceWorkerControllerAvailable()) {
-          // Service worker is already controlling the page
+          console.log('Service worker is already controlling the page');
           if (user && token && !isPolling) {
             startPolling();
           }
         } else {
+          console.log('Waiting for service worker to take control...');
           // Wait for the service worker to take control
           if (navigator.serviceWorker) {
             navigator.serviceWorker.addEventListener('controllerchange', () => {
+              console.log('Service worker controller changed');
               if (user && token && !isPolling) {
                 startPolling();
               }
             });
           }
+          
+          // Also try to start polling after a short delay in case controllerchange doesn't fire
+          setTimeout(() => {
+            if (isServiceWorkerControllerAvailable() && user && token && !isPolling) {
+              console.log('Starting service worker polling after timeout');
+              startPolling();
+            } else if (user && token && !isPolling) {
+              console.log('Service worker not available, starting fallback polling');
+              startFallbackPolling();
+            }
+          }, 2000);
+        }
+      } else {
+        console.warn('Service workers not supported in this browser');
+        // Start fallback polling if service workers not supported
+        if (user && token && !isPolling) {
+          console.log('Starting fallback polling (service workers not supported)');
+          startFallbackPolling();
         }
       }
     } catch (error) {
       console.error('Failed to register service worker:', error);
+      // Start fallback polling if service worker registration fails
+      if (user && token && !isPolling) {
+        console.log('Starting fallback polling (service worker registration failed)');
+        startFallbackPolling();
+      }
     }
   };
 
@@ -145,21 +213,22 @@ const SimpleChatBox = ({ currentUser }) => {
           type: 'STOP_POLLING'
         });
         setIsPolling(false);
-        console.log('Polling stopped successfully');
+        console.log('Service worker polling stopped successfully');
       } else {
-        console.warn('Cannot stop polling: no controller or not polling', {
+        console.warn('Cannot stop service worker polling: no controller or not polling', {
           hasNavigatorServiceWorker: !!navigator.serviceWorker,
           hasController: isServiceWorkerControllerAvailable(),
           isPolling
         });
       }
     } catch (error) {
-      console.error('Error stopping polling:', error);
+      console.error('Error stopping service worker polling:', error);
     }
   };
 
   const stopServiceWorker = () => {
     stopPolling();
+    stopFallbackPolling();
   };
 
   const handleServiceWorkerMessage = (event) => {
@@ -236,8 +305,9 @@ const SimpleChatBox = ({ currentUser }) => {
             type: 'ADD_MESSAGE',
             data: { message: response.data }
           });
+          console.log('Message synced to service worker');
         } else {
-          console.warn('Service worker controller not available, message not synced to worker');
+          console.log('Service worker controller not available, message added to local state only');
         }
       } catch (error) {
         console.error('Error updating service worker with new message:', error);
@@ -282,8 +352,9 @@ const SimpleChatBox = ({ currentUser }) => {
           navigator.serviceWorker.controller.postMessage({
             type: 'CLEAR_MESSAGES'
           });
+          console.log('Clear message synced to service worker');
         } else {
-          console.warn('Service worker controller not available, clear message not synced to worker');
+          console.log('Service worker controller not available, clear message applied to local state only');
         }
       } catch (error) {
         console.error('Error updating service worker with clear message:', error);
