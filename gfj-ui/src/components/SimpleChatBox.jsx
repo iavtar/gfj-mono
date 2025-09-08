@@ -79,9 +79,25 @@ const SimpleChatBox = ({ currentUser }) => {
         
         // console.log('Chat Service Worker registered');
         
-        // Start polling once service worker is ready
-        if (user && token && !isPolling) {
-          startPolling();
+        // Wait for service worker to be ready and controlling the page
+        if (registration.waiting) {
+          // If there's a waiting service worker, activate it
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+        
+        // Wait for the service worker to be controlling the page
+        if (navigator.serviceWorker.controller) {
+          // Service worker is already controlling the page
+          if (user && token && !isPolling) {
+            startPolling();
+          }
+        } else {
+          // Wait for the service worker to take control
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (user && token && !isPolling) {
+              startPolling();
+            }
+          });
         }
       }
     } catch (error) {
@@ -90,25 +106,46 @@ const SimpleChatBox = ({ currentUser }) => {
   };
 
   const startPolling = () => {
-    if (serviceWorkerRef.current && navigator.serviceWorker.controller && !isPolling) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'START_POLLING',
-        data: {
-          token,
-          interval: 2000,
-          currentMessages: messages
-        }
-      });
-      setIsPolling(true);
+    try {
+      if (serviceWorkerRef.current && navigator.serviceWorker.controller && !isPolling) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'START_POLLING',
+          data: {
+            token,
+            interval: 2000,
+            currentMessages: messages
+          }
+        });
+        setIsPolling(true);
+        console.log('Polling started successfully');
+      } else {
+        console.warn('Cannot start polling: service worker not ready or already polling', {
+          hasServiceWorker: !!serviceWorkerRef.current,
+          hasController: !!navigator.serviceWorker.controller,
+          isPolling
+        });
+      }
+    } catch (error) {
+      console.error('Error starting polling:', error);
     }
   };
 
   const stopPolling = () => {
-    if (navigator.serviceWorker.controller && isPolling) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'STOP_POLLING'
-      });
-      setIsPolling(false);
+    try {
+      if (navigator.serviceWorker.controller && isPolling) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'STOP_POLLING'
+        });
+        setIsPolling(false);
+        console.log('Polling stopped successfully');
+      } else {
+        console.warn('Cannot stop polling: no controller or not polling', {
+          hasController: !!navigator.serviceWorker.controller,
+          isPolling
+        });
+      }
+    } catch (error) {
+      console.error('Error stopping polling:', error);
     }
   };
 
@@ -184,11 +221,17 @@ const SimpleChatBox = ({ currentUser }) => {
       setMessages(updatedMessages);
       
       // Update service worker with new message
-      if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'ADD_MESSAGE',
-          data: { message: response.data }
-        });
+      try {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'ADD_MESSAGE',
+            data: { message: response.data }
+          });
+        } else {
+          console.warn('Service worker controller not available, message not synced to worker');
+        }
+      } catch (error) {
+        console.error('Error updating service worker with new message:', error);
       }
       
       setNewMessage('');
@@ -225,10 +268,16 @@ const SimpleChatBox = ({ currentUser }) => {
       setMessages([]);
       
       // Update service worker when clearing messages
-      if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'CLEAR_MESSAGES'
-        });
+      try {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'CLEAR_MESSAGES'
+          });
+        } else {
+          console.warn('Service worker controller not available, clear message not synced to worker');
+        }
+      } catch (error) {
+        console.error('Error updating service worker with clear message:', error);
       }
       
       setError(null);

@@ -80,6 +80,10 @@ self.addEventListener('message', (event) => {
   const { type, data } = event.data;
   
   switch (type) {
+    case 'SKIP_WAITING':
+      self.skipWaiting();
+      break;
+      
     case 'START_POLLING':
       const { token, interval = 2000 } = data;
       currentMessages = data.currentMessages || [];
