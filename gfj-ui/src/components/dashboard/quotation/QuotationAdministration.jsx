@@ -137,7 +137,7 @@ const QuotationAdministration = () => {
         {/* Empty cell for expand column */}
         <TableCell sx={{ padding: "8px 16px" }}></TableCell>
 
-        {shouldShowCheckboxes && (
+        {/* {shouldShowCheckboxes && (
           <TableCell sx={{ padding: "8px 16px" }}>
             <Checkbox
               checked={selectedQuotations.includes(childQuotation?.quotationId)}
@@ -149,7 +149,7 @@ const QuotationAdministration = () => {
               }}
             />
           </TableCell>
-        )}
+        )} */}
 
         <TableCell sx={{ padding: "8px 16px" }}>
           <Typography
@@ -1463,16 +1463,19 @@ const QuotationAdministration = () => {
                               }}
                             >
                               <EditIcon
-                                style={{ cursor: "pointer" }}
-                                color="primary"
+                                style={{
+                                  cursor: quotation?.finalQuotations?.length > 0 ? "not-allowed" : "pointer"
+                                }}
+                                color={quotation?.finalQuotations?.length > 0 ? "disabled" : "primary"}
                                 onClick={(e) => {
+                                  if (quotation?.finalQuotations?.length > 0) return;
                                   e.stopPropagation();
                                   handleEdit(quotation, false);
                                 }}
-                                titleAccess="Edit"
+                                titleAccess={quotation?.finalQuotations?.length > 0 ? "Edit Disabled - Final Quotations Exist" : "Edit"}
                                 sx={{
                                   "&:hover": {
-                                    transform: "scale(1.1)",
+                                    transform: quotation?.finalQuotations?.length > 0 ? "none" : "scale(1.1)",
                                     transition: "transform 0.2s ease-in-out",
                                   },
                                 }}
@@ -1563,7 +1566,7 @@ const QuotationAdministration = () => {
                                       >
                                         {/* Empty header for expand column */}
                                       </TableCell>
-                                      {shouldShowCheckboxes && (
+                                      {/* {shouldShowCheckboxes && (
                                         <TableCell
                                           sx={{
                                             fontWeight: 600,
@@ -1573,7 +1576,7 @@ const QuotationAdministration = () => {
                                         >
                                           Select
                                         </TableCell>
-                                      )}
+                                      )} */}
                                       <TableCell
                                         sx={{
                                           fontWeight: 600,
