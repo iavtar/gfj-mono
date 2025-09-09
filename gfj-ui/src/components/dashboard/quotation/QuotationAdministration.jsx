@@ -67,6 +67,54 @@ const columns = [
   { columnLabel: "Actions", columnKey: "actions" },
 ];
 
+// Status color configuration - easily changeable root variables
+const STATUS_COLORS = {
+  new: {
+    background: "#e0f2fe", // Light blue
+    text: "#0369a1", // Dark blue
+  },
+  pending: {
+    background: "#fef3c7", // Light yellow
+    text: "#92400e", // Dark amber
+  },
+  approved: {
+    background: "#dcfce7", // Light green
+    text: "#166534", // Dark green
+  },
+  declined: {
+    background: "#fee2e2", // Light red
+    text: "#991b1b", // Dark red
+  },
+  send_to_manufacture: {
+    background: "#f3e8ff", // Light purple
+    text: "#6b21a8", // Dark purple
+  },
+  "manufacturing complete": {
+    background: "#ecfdf5", // Light emerald
+    text: "#065f46", // Dark emerald
+  },
+  sentforshipping: {
+    background: "#fef7ed", // Light orange
+    text: "#9a3412", // Dark orange
+  },
+  shipped: {
+    background: "#fdf4ff", // Light pink
+    text: "#be185d", // Dark pink
+  },
+  delivered: {
+    background: "#f0fdf4", // Light lime
+    text: "#15803d", // Dark lime
+  },
+  returned: {
+    background: "#fef2f2", // Light rose
+    text: "#b91c1c", // Dark rose
+  },
+  cancelled: {
+    background: "#f9fafb", // Light gray
+    text: "#374151", // Dark gray
+  },
+};
+
 const QuotationAdministration = () => {
   const { token, id, roles } = useSelector((state) => state.user.userDetails || {});
   const [quotations, setQuotations] = useState([]);
@@ -187,12 +235,14 @@ const QuotationAdministration = () => {
             label={childQuotation.quotationStatus || "pending"}
             size="small"
             sx={{
+              width: "55px",
+              height: "25px",
               fontSize: "0.65rem",
               fontWeight: 600,
               textTransform: "uppercase",
               borderRadius: "12px",
-              backgroundColor: "#d1fae5",
-              color: "#065f46",
+              backgroundColor: STATUS_COLORS[childQuotation.quotationStatus || "pending"]?.background || STATUS_COLORS.pending.background,
+              color: STATUS_COLORS[childQuotation.quotationStatus || "pending"]?.text || STATUS_COLORS.pending.text,
             }}
           />
         </TableCell>
@@ -480,7 +530,6 @@ const QuotationAdministration = () => {
 
   // Handler stubs for actions
   const handleEdit = (quotation, isChild, parentQuotation) => {
-    console.log("Edit clicked", quotation);
     try {
       setQuotationId(quotation?.finalQuotationId || quotation?.quotationId || "");
       const data = JSON.parse(quotation?.data);
@@ -519,7 +568,7 @@ const QuotationAdministration = () => {
       setError(null);
       try {
         const response = await apiClient.delete(
-          `agent/deleteQuotation?quotationId=${quotation?.quotationId}`
+          `agent/deleteQuotation?quotationId=${quotation?.finalQuotationId || quotation?.quotationId}`
         );
         if (response?.status === 200){
           toast.success(`Quotation Deleted Successfully!`)
@@ -1165,66 +1214,8 @@ const QuotationAdministration = () => {
                                     fontWeight: 600,
                                     textTransform: "uppercase",
                                     borderRadius: "16px",
-                                    backgroundColor: () => {
-                                      const status =
-                                        quotation?.quotationStatus || "new";
-                                      switch (status.toLowerCase()) {
-                                        case "new":
-                                          return "#c7f6feff";
-                                        case "pending":
-                                          return "#fef3c7";
-                                        case "approved":
-                                          return "#d1fae5";
-                                        case "sentforshipping":
-                                          return "#fed7aa";
-                                        case "shipped":
-                                          return "#fed7aa";
-                                        case "delivered":
-                                          return "#fed7aa";
-                                        case "returned":
-                                          return "#fed7aa";
-                                        case "cancelled":
-                                          return "#fed7aa";
-                                        case "declined":
-                                          return "#fee2e2";
-                                        case "send_to_manufacture":
-                                          return "#be5cc0ff";
-                                        case "manufacturing complete":
-                                          return "#f7ffa1ff";
-                                        default:
-                                          return "#f3f4f6";
-                                      }
-                                    },
-                                    color: () => {
-                                      const status =
-                                        quotation?.quotationStatus || "new";
-                                      switch (status.toLowerCase()) {
-                                        case "new":
-                                          return "#1c0081ff";
-                                        case "pending":
-                                          return "#92400e";
-                                        case "approved":
-                                          return "#065f46";
-                                        case "sentforshipping":
-                                          return "#7c2d12";
-                                        case "shipped":
-                                          return "#7c2d12";
-                                        case "delivered":
-                                          return "#7c2d12";
-                                        case "returned":
-                                          return "#7c2d12";
-                                        case "cancelled":
-                                          return "#7c2d12";
-                                        case "declined":
-                                          return "#991b1b";
-                                        case "send_to_manufacture":
-                                          return "#6c136bff";
-                                        case "manufacturing complete":
-                                          return "#494f00ff";
-                                        default:
-                                          return "#374151";
-                                      }
-                                    },
+                                    backgroundColor: STATUS_COLORS[quotation?.quotationStatus || "new"]?.background || STATUS_COLORS.new.background,
+                                    color: STATUS_COLORS[quotation?.quotationStatus || "new"]?.text || STATUS_COLORS.new.text,
                                     border: "none",
                                     boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                                     "&:hover": {
@@ -1255,9 +1246,6 @@ const QuotationAdministration = () => {
                                         fontWeight: 600,
                                         textTransform: "uppercase",
                                         padding: "8px 16px",
-                                        "&:hover": {
-                                          backgroundColor: "#f8fafc",
-                                        },
                                         "&.Mui-selected": {
                                           backgroundColor: "#e0e7ff",
                                           color: "#3730a3",
@@ -1278,8 +1266,11 @@ const QuotationAdministration = () => {
                                     )
                                   }
                                   sx={{
-                                    color: "#1c0081ff",
-                                    backgroundColor: "#c7f6feff",
+                                    color: STATUS_COLORS.new.text,
+                                    backgroundColor: STATUS_COLORS.new.background,
+                                    "&:hover": {
+                                      backgroundColor: "#bfdbfe", // Darker blue
+                                    },
                                   }}
                                 >
                                   New
@@ -1292,8 +1283,11 @@ const QuotationAdministration = () => {
                                     )
                                   }
                                   sx={{
-                                    color: "#92400e",
-                                    backgroundColor: "#fef3c7",
+                                    color: STATUS_COLORS.pending.text,
+                                    backgroundColor: STATUS_COLORS.pending.background,
+                                    "&:hover": {
+                                      backgroundColor: "#f5d279ff", // Darker yellow
+                                    },
                                   }}
                                 >
                                   {roles[0] === "business_admin"
@@ -1302,10 +1296,19 @@ const QuotationAdministration = () => {
                                 </MenuItem>
                                 <MenuItem
                                   value="approved"
-                                  disabled={roles[0] !== "business_admin"}
+                                  disabled={
+                                    roles[0] !== "business_admin" ||
+                                    [
+                                      "manufacturing complete",
+                                      "send_to_manufacture",
+                                    ].includes(quotation?.quotationStatus)
+                                  }
                                   sx={{
-                                    color: "#065f46",
-                                    backgroundColor: "#d1fae5",
+                                    color: STATUS_COLORS.approved.text,
+                                    backgroundColor: STATUS_COLORS.approved.background,
+                                    "&:hover": {
+                                      backgroundColor: "#16a34a", // Darker green
+                                    },
                                   }}
                                 >
                                   Approved
@@ -1314,8 +1317,11 @@ const QuotationAdministration = () => {
                                   value="declined"
                                   disabled={roles[0] !== "business_admin"}
                                   sx={{
-                                    color: "#991b1b",
-                                    backgroundColor: "#fee2e2",
+                                    color: STATUS_COLORS.declined.text,
+                                    backgroundColor: STATUS_COLORS.declined.background,
+                                    "&:hover": {
+                                      backgroundColor: "#ff6f6fff", // Darker red
+                                    },
                                   }}
                                 >
                                   Declined
@@ -1328,8 +1334,11 @@ const QuotationAdministration = () => {
                                     )
                                   }
                                   sx={{
-                                    color: "#991b1b",
-                                    backgroundColor: "#fee2e2",
+                                    color: STATUS_COLORS.send_to_manufacture.text,
+                                    backgroundColor: STATUS_COLORS.send_to_manufacture.background,
+                                    "&:hover": {
+                                      backgroundColor: "#f07fffff", // Darker purple
+                                    },
                                   }}
                                 >
                                   Send to Manufacture
@@ -1342,8 +1351,11 @@ const QuotationAdministration = () => {
                                     )
                                   }
                                   sx={{
-                                    color: "#991b1b",
-                                    backgroundColor: "#fee2e2",
+                                    color: STATUS_COLORS["manufacturing complete"].text,
+                                    backgroundColor: STATUS_COLORS["manufacturing complete"].background,
+                                    "&:hover": {
+                                      backgroundColor: "#05db97ff", // Darker emerald
+                                    },
                                   }}
                                 >
                                   Manufacturing Complete
@@ -1352,8 +1364,11 @@ const QuotationAdministration = () => {
                                   value="sentforshipping"
                                   disabled
                                   sx={{
-                                    color: "#7c2d12",
-                                    backgroundColor: "#fed7aa",
+                                    color: STATUS_COLORS.sentforshipping.text,
+                                    backgroundColor: STATUS_COLORS.sentforshipping.background,
+                                    "&:hover": {
+                                      backgroundColor: "#ea580c", // Darker orange
+                                    },
                                   }}
                                 >
                                   Sent for Shipping
@@ -1362,8 +1377,11 @@ const QuotationAdministration = () => {
                                   value="shipped"
                                   disabled
                                   sx={{
-                                    color: "#7c2d12",
-                                    backgroundColor: "#fed7aa",
+                                    color: STATUS_COLORS.shipped.text,
+                                    backgroundColor: STATUS_COLORS.shipped.background,
+                                    "&:hover": {
+                                      backgroundColor: "#db2777", // Darker pink
+                                    },
                                   }}
                                 >
                                   Shipped
@@ -1372,8 +1390,11 @@ const QuotationAdministration = () => {
                                   value="delivered"
                                   disabled
                                   sx={{
-                                    color: "#7c2d12",
-                                    backgroundColor: "#fed7aa",
+                                    color: STATUS_COLORS.delivered.text,
+                                    backgroundColor: STATUS_COLORS.delivered.background,
+                                    "&:hover": {
+                                      backgroundColor: "#15803d", // Darker lime
+                                    },
                                   }}
                                 >
                                   Delivered
@@ -1382,8 +1403,11 @@ const QuotationAdministration = () => {
                                   value="returned"
                                   disabled
                                   sx={{
-                                    color: "#7c2d12",
-                                    backgroundColor: "#fed7aa",
+                                    color: STATUS_COLORS.returned.text,
+                                    backgroundColor: STATUS_COLORS.returned.background,
+                                    "&:hover": {
+                                      backgroundColor: "#b91c1c", // Darker rose
+                                    },
                                   }}
                                 >
                                   Returned
@@ -1392,8 +1416,11 @@ const QuotationAdministration = () => {
                                   value="cancelled"
                                   disabled
                                   sx={{
-                                    color: "#7c2d12",
-                                    backgroundColor: "#fed7aa",
+                                    color: STATUS_COLORS.cancelled.text,
+                                    backgroundColor: STATUS_COLORS.cancelled.background,
+                                    "&:hover": {
+                                      backgroundColor: "#4b5563", // Darker gray
+                                    },
                                   }}
                                 >
                                   Cancelled
@@ -1464,18 +1491,33 @@ const QuotationAdministration = () => {
                             >
                               <EditIcon
                                 style={{
-                                  cursor: quotation?.finalQuotations?.length > 0 ? "not-allowed" : "pointer"
+                                  cursor:
+                                    quotation?.finalQuotations?.length > 0
+                                      ? "not-allowed"
+                                      : "pointer",
                                 }}
-                                color={quotation?.finalQuotations?.length > 0 ? "disabled" : "primary"}
+                                color={
+                                  quotation?.finalQuotations?.length > 0
+                                    ? "disabled"
+                                    : "primary"
+                                }
                                 onClick={(e) => {
-                                  if (quotation?.finalQuotations?.length > 0) return;
+                                  if (quotation?.finalQuotations?.length > 0)
+                                    return;
                                   e.stopPropagation();
                                   handleEdit(quotation, false);
                                 }}
-                                titleAccess={quotation?.finalQuotations?.length > 0 ? "Edit Disabled - Final Quotations Exist" : "Edit"}
+                                titleAccess={
+                                  quotation?.finalQuotations?.length > 0
+                                    ? "Edit Disabled - Final Quotations Exist"
+                                    : "Edit"
+                                }
                                 sx={{
                                   "&:hover": {
-                                    transform: quotation?.finalQuotations?.length > 0 ? "none" : "scale(1.1)",
+                                    transform:
+                                      quotation?.finalQuotations?.length > 0
+                                        ? "none"
+                                        : "scale(1.1)",
                                     transition: "transform 0.2s ease-in-out",
                                   },
                                 }}
@@ -1745,9 +1787,11 @@ const QuotationAdministration = () => {
       <Dialog
         open={openDialog}
         onClose={handleDialogClose}
-        maxWidth="lg"
         fullWidth
-        PaperProps={{ className: "rounded-xl shadow-lg p-4" }}
+        PaperProps={{
+          className: "rounded-xl shadow-lg p-4",
+          sx: { minWidth: '80vw', maxWidth: '80vw' }
+        }}
         TransitionProps={{ timeout: 300 }}
       >
         <Box className="flex justify-between items-center">

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import {
   Box,
@@ -21,6 +21,9 @@ import {
   TableRow,
   Menu,
   CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import { Add, Delete, Close, ArrowDropDown } from "@mui/icons-material";
 import { toast } from "react-toastify";
@@ -47,8 +50,8 @@ const roundRanges = {
 };
 
 const baguetteRanges = {
-  "1.50-2.10": "(0.5-2.3mm) Natural Diamonds Baguette",
-  "2.20-2.60": "(2.3-2.7mm) Natural Diamonds Baguette",
+  "1.50-2.10": "(1.5-2.1mm) Natural Diamonds Baguette",
+  "2.20-2.60": "(2.2-2.6mm) Natural Diamonds Baguette",
   "2.70-4.00": "(2.7-4.0mm) Natural Diamonds Baguette",
   "Above-4.00": "(Above 4.0mm) Natural Diamonds Baguette",
 };
@@ -80,7 +83,6 @@ const CreateQuotation = ({
   const [quotationNumber, setQuotationNumber] = useState("");
   const [description, setDescription] = useState("");
   const [descriptionError, setDescriptionError] = useState("");
-
   const [details, setDetails] = useState({
     goldPrice: "0.00",
     goldWastage: client?.goldWastagePercentage?.toFixed(2) || "0.00",
@@ -88,14 +90,24 @@ const CreateQuotation = ({
     diamondSetting: client?.diamondSettingPrice?.toFixed(2) || "0.00",
     profitLabour: client?.profitAndLabourPercentage?.toFixed(2) || "0.00",
     purity: "43",
+    diamondTypeRound: "VS2 si1",
+    diamondTypeBagutte: "VS2 si1",
     roundsRange1: "10.00",
+    roundsRange1_weight: "0.00",
     roundsRange2: "20.00",
+    roundsRange2_weight: "0.00",
     roundsRange3: "20.00",
+    roundsRange3_weight: "0.00",
     roundsRange4: "20.00",
+    roundsRange4_weight: "0.00",
     baguettesRange1: "50.00",
+    baguettesRange1_weight: "0.00",
     baguettesRange2: "50.00",
+    baguettesRange2_weight: "0.00",
     baguettesRange3: "50.00",
+    baguettesRange3_weight: "0.00",
     baguettesRange4: "50.00",
+    baguettesRange4_weight: "0.00",
   });
   const [anchorEl, setAnchorEl] = useState(null);
   const [materials, setMaterials] = useState([]);
@@ -108,6 +120,120 @@ const CreateQuotation = ({
     Silver: 100,
   });
   const exportRef = useRef();
+  
+  const diamondRateRounds = {
+    "VS2 si1": {
+      "0.50-2.30": 350,
+      "2.40-2.75": 380,
+      "2.80-3.30": 450,
+      "Above-3.30": 550,
+    },
+    "VS G-H": {
+      "0.50-2.30": 400,
+      "2.40-2.75": 430,
+      "2.80-3.30": 500,
+      "Above-3.30": 600,
+    },
+    "VS D-F": {
+      "0.50-2.30": 500,
+      "2.40-2.75": 530,
+      "2.80-3.30": 550,
+      "Above-3.30": 650,
+    },
+    "Lab grown (VVS-VS)": {
+      "0.50-2.30": 0,
+      "2.40-2.75": 0,
+      "2.80-3.30": 0,
+      "Above-3.30": 0,
+    },
+    "True VS D-F(ex ex ex)": {
+      "0.50-2.30": 550,
+      "2.40-2.75": 580,
+      "2.80-3.30": 630,
+      "Above-3.30": 750,
+    },
+    "Si2-Si3 regular": {
+      "0.50-2.30": 300,
+      "2.40-2.75": 330,
+      "2.80-3.30": 400,
+      "Above-3.30": 450,
+    },
+    "Si1- FG": {
+      "0.50-2.30": 450,
+      "2.40-2.75": 480,
+      "2.80-3.30": 550,
+      "Above-3.30": 600,
+    },
+    "VVS D-F( top quality)": {
+      "0.50-2.30": 650,
+      "2.40-2.75": 680,
+      "2.80-3.30": 750,
+      "Above-3.30": 850,
+    },
+    Moissanite: {
+      "0.50-2.30": 0,
+      "2.40-2.75": 0,
+      "2.80-3.30": 0,
+      "Above-3.30": 0,
+    },
+  };
+
+  const diamondRateBaguettes = {
+    "VS2 si1": {
+      "1.50-2.10": 350,
+      "2.20-2.60": 380,
+      "2.70-4.00": 450,
+      "Above-4.00": 550,
+    },
+    "VS G-H": {
+      "1.50-2.10": 400,
+      "2.20-2.60": 430,
+      "2.70-4.00": 500,
+      "Above-4.00": 600,
+    },
+    "VS D-F": {
+      "1.50-2.10": 500,
+      "2.20-2.60": 530,
+      "2.70-4.00": 550,
+      "Above-4.00": 650,
+    },
+    "Lab grown (VVS-VS)": {
+      "1.50-2.10": 0,
+      "2.20-2.60": 0,
+      "2.70-4.00": 0,
+      "Above-4.00": 0,
+    },
+    "True VS D-F(ex ex ex)": {
+      "1.50-2.10": 550,
+      "2.20-2.60": 580,
+      "2.70-4.00": 630,
+      "Above-4.00": 750,
+    },
+    "Si2-Si3 regular": {
+      "1.50-2.10": 300,
+      "2.20-2.60": 330,
+      "2.70-4.00": 400,
+      "Above-4.00": 450,
+    },
+    "Si1- FG": {
+      "1.50-2.10": 450,
+      "2.20-2.60": 480,
+      "2.70-4.00": 550,
+      "Above-4.00": 600,
+    },
+    "VVS D-F( top quality)": {
+      "1.50-2.10": 650,
+      "2.20-2.60": 680,
+      "2.70-4.00": 750,
+      "Above-4.00": 850,
+    },
+    Moissanite: {
+      "1.50-2.10": 0,
+      "2.20-2.60": 0,
+      "2.70-4.00": 0,
+      "Above-4.00": 0,
+    },
+  };
 
   useEffect(() => {
     if (!isEdit) {
@@ -124,21 +250,35 @@ const CreateQuotation = ({
 
         setPurityToPercentMap(prev => ({ ...prev, Silver: parseFloat(silverMaterial?.price) || 100 }));
 
+        const rateRounds = diamondRateRounds["VS2 si1"];
+        const rateBaguttes = diamondRateBaguettes["VS2 si1"];
+
         setDetails({
-          goldPrice: (goldMaterial?.price / usdToInr?.price)?.toFixed(2) || "0.00",
+          goldPrice:
+            (goldMaterial?.price / usdToInr?.price)?.toFixed(2) || "0.00",
           goldWastage: client?.goldWastagePercentage?.toFixed(2) || "0.00",
           weight: "15.00",
           diamondSetting: client?.diamondSettingPrice?.toFixed(2) || "0.00",
           profitLabour: client?.profitAndLabourPercentage?.toFixed(2) || "0.00",
           purity: "43",
-          roundsRange1: "10.00",
-          roundsRange2: "20.00",
-          roundsRange3: "20.00",
-          roundsRange4: "20.00",
-          baguettesRange1: "50.00",
-          baguettesRange2: "50.00",
-          baguettesRange3: "50.00",
-          baguettesRange4: "50.00",
+          diamondTypeRound: "VS2 si1",
+          diamondTypeBagutte: "VS2 si1",
+          roundsRange1: rateRounds["0.50-2.30"] || "0.00",
+          roundsRange1_weight: calculatorData?.rounds?.["0.50-2.30"]?.totalWeight || "0.00",
+          roundsRange2: rateRounds["2.40-2.75"] || "0.00",
+          roundsRange2_weight: calculatorData?.rounds?.["2.40-2.75"]?.totalWeight || "0.00",
+          roundsRange3: rateRounds["2.80-3.30"] || "0.00",
+          roundsRange3_weight: calculatorData?.rounds?.["2.80-3.30"]?.totalWeight || "0.00",
+          roundsRange4: rateRounds["Above-3.30"] || "0.00",
+          roundsRange4_weight: calculatorData?.rounds?.["Above-3.30"]?.totalWeight || "0.00",
+          baguettesRange1: rateBaguttes["1.50-2.10"] || "0.00",
+          baguettesRange1_weight: calculatorData?.baguettes?.["1.50-2.10"]?.totalWeight || "0.00",
+          baguettesRange2: rateBaguttes["2.20-2.60"] || "0.00",
+          baguettesRange2_weight: calculatorData?.baguettes?.["2.20-2.60"]?.totalWeight || "0.00",
+          baguettesRange3: rateBaguttes["2.70-4.00"] || "0.00",
+          baguettesRange3_weight: calculatorData?.baguettes?.["2.70-4.00"]?.totalWeight || "0.00",
+          baguettesRange4: rateBaguttes["Above-4.00"] || "0.00",
+          baguettesRange4_weight: calculatorData?.baguettes?.["Above-4.00"]?.totalWeight || "0.00",
         });
       }
     }
@@ -202,16 +342,40 @@ const CreateQuotation = ({
   const handleStartAddingEntries = (formValues) => {
     const ndrRange = {
       round: {
-        "0.50-2.30": formValues?.roundsRange1 || 1,
-        "2.40-2.75": formValues?.roundsRange2 || 1,
-        "2.80-3.30": formValues?.roundsRange3 || 1,
-        "Above-3.30": formValues?.roundsRange4 || 1,
+        "0.50-2.30": {
+          price: formValues?.roundsRange1 || 1,
+          weight: formValues?.roundsRange1_weight || 1,
+        },
+        "2.40-2.75": {
+          price: formValues?.roundsRange2 || 1,
+          weight: formValues?.roundsRange2_weight || 1,
+        },
+        "2.80-3.30": {
+          price: formValues?.roundsRange3 || 1,
+          weight: formValues?.roundsRange3_weight || 1,
+        },
+        "Above-3.30": {
+          price: formValues?.roundsRange4 || 1,
+          weight: formValues?.roundsRange4_weight || 1,
+        },
       },
       baguettes: {
-        "1.50-2.10": formValues?.baguettesRange1 || 1,
-        "2.20-2.60": formValues?.baguettesRange2 || 1,
-        "2.70-4.00": formValues?.baguettesRange3 || 1,
-        "Above-4.00": formValues?.baguettesRange4 || 1,
+        "1.50-2.10": {
+          price: formValues?.baguettesRange1 || 1,
+          weight: formValues?.baguettesRange1_weight || 1,
+        },
+        "2.20-2.60": {
+          price: formValues?.baguettesRange2 || 1,
+          weight: formValues?.baguettesRange2_weight || 1,
+        },
+        "2.70-4.00": {
+          price: formValues?.baguettesRange3 || 1,
+          weight: formValues?.baguettesRange3_weight || 1,
+        },
+        "Above-4.00": {
+          price: formValues?.baguettesRange4 || 1,
+          weight: formValues?.baguettesRange4_weight || 1,
+        },
       },
     };
     const computedRows = [];
@@ -245,22 +409,24 @@ const CreateQuotation = ({
 
     // Round CTWs
     Object.entries(roundRanges).forEach(([key, label]) => {
-      const weight = calculatorData?.rounds?.[key]?.totalWeight || 0;
-      const multiplier = ndrRange?.round?.[key] || 0;
+      // const weight = calculatorData?.rounds?.[key]?.totalWeight || 0;
+      const weight = ndrRange?.round?.[key]?.weight || 0;
+      const multiplier = ndrRange?.round?.[key]?.price || 0;
       const res = (weight * multiplier)?.toFixed(2);
       if (res > 0) {
-        label = `${label} \t [ ${weight}ctw x $${multiplier} ]`;
+        label = `${label} \t ( ${formValues?.diamondTypeRound} ) [ ${weight}ctw x $${multiplier} ]`;
         computedRows.push([label, res]);
       }
     });
 
     // Baguette CTWs
     Object.entries(baguetteRanges).forEach(([key, label]) => {
-      const weight = calculatorData?.baguettes?.[key]?.totalWeight || 0;
-      const multiplier = ndrRange?.baguettes?.[key] || 0;
+      // const weight = calculatorData?.baguettes?.[key]?.totalWeight || 0;
+      const weight = ndrRange?.baguettes?.[key]?.weight || 0;
+      const multiplier = ndrRange?.baguettes?.[key]?.price || 0;
       const res = (weight * multiplier)?.toFixed(2);
       if (res > 0) {
-        label = `${label} \t [ ${weight}ctw x $${multiplier} ]`;
+        label = `${label} \t ( ${formValues?.diamondTypeBagutte} ) [ ${weight}ctw x $${multiplier} ]`;
         computedRows.push([label, res]);
       }
     });
@@ -627,7 +793,7 @@ const CreateQuotation = ({
     doc.setFont(undefined, "italic");
     doc.setFontSize(9); // smaller font
     doc.text(
-      "Contact Us: Email: admin@gemsfromjaipur.com | Phone: +91-9828882226",
+      `Contact Us: Email: ${client?.agentEmail || "admin@gemsfromjaipur.com"} | Phone: ${client?.agentPhoneNumber || "+91-9828882226"}`,
       14,
       currentY + 8
     );
@@ -656,7 +822,7 @@ const CreateQuotation = ({
         quotationDetails: details,
         client: client,
         description: description,
-        contentRows: contentRows,
+        // contentRows: contentRows,
         calculatorData: calculatorData,
         totalsSection: { subtotal, profitAndLabour, total },
       };
@@ -878,10 +1044,10 @@ const CreateQuotation = ({
   };
 
   const baguetteFields = [
-    { label: "0.50-2.30", name: "baguettesRange1" },
-    { label: "2.80-3.30", name: "baguettesRange2" },
-    { label: "2.40-2.75", name: "baguettesRange3" },
-    { label: "Above-3.30", name: "baguettesRange4" },
+    { label: "1.50-2.10", name: "baguettesRange1" },
+    { label: "2.20-2.60", name: "baguettesRange2" },
+    { label: "2.70-4.00", name: "baguettesRange3" },
+    { label: "Above-4.00", name: "baguettesRange4" },
   ];
 
   const roundFields = [
@@ -897,9 +1063,35 @@ const CreateQuotation = ({
     { label: "Total", value: total },
   ];
 
-  // useEffect(() => {
-  //   console.log("Calculator Data", calculatorData);
-  // }, [calculatorData]);
+  const handleChangeRounds = (event) => {
+    const selected = event.target.value;
+    setDetails((prev) => {
+      const updated = { ...prev };
+      updated.diamondTypeRound = selected;
+      const rates = diamondRateRounds[selected] || {};
+      roundFields.forEach((field) => {
+        updated[field.name] = rates?.[field.label] || "0.00";
+      });
+      return updated;
+    });
+  }
+
+  const handleChangeBaguettes = (event) => {
+    const selected = event.target.value;
+    setDetails((prev) => {
+      const updated = { ...prev };
+      updated.diamondTypeBagutte = selected;
+      const rates = diamondRateBaguettes[selected] || {};
+      baguetteFields.forEach((field) => {
+        updated[field.name] = rates?.[field.label] || "0.00";
+      });
+      return updated;
+    });
+  }
+
+  useEffect(() => {
+    console.log("Details updated:", details);
+  }, [details]);
 
   return (
     <Box className="bg-white h-full flex flex-col overflow-hidden">
@@ -937,7 +1129,7 @@ const CreateQuotation = ({
                   >
                     <Typography
                       variant="h7"
-                      className="text-[#4c257e] font-bold pb-5 w-[180px]"
+                      className="text-[#4c257e] font-bold pb-5 w-[150px]"
                     >
                       Generic Details
                     </Typography>
@@ -1073,9 +1265,33 @@ const CreateQuotation = ({
                   >
                     <Typography
                       variant="h7"
-                      className="text-[#4c257e] font-bold pb-5 w-[180px]"
+                      className="text-[#4c257e] font-bold pb-5 w-[200px]"
                     >
-                      CTW for Rounds
+                      Rounds
+                    </Typography>
+
+                    <FormControl sx={{ width: 350 }} size="small">
+                      <InputLabel id="diamond-type-label">
+                        Diamond Type
+                      </InputLabel>
+                      <Select
+                        label="Diamond Type"
+                        value={values?.diamondTypeRound}
+                        onChange={handleChangeRounds}
+                      >
+                        {Object.keys(diamondRateRounds).map((type) => (
+                          <MenuItem key={type} value={type}>
+                            {type}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <Typography
+                      variant="h7"
+                      className="text-[#4c257e] font-bold pb-5"
+                    >
+                      Price
                     </Typography>
 
                     {roundFields.map((field) => (
@@ -1098,6 +1314,34 @@ const CreateQuotation = ({
                         }}
                       />
                     ))}
+
+                    <Typography
+                      variant="h7"
+                      className="text-[#4c257e] font-bold pb-5"
+                    >
+                      CTW
+                    </Typography>
+
+                    {roundFields.map((field) => (
+                      <TextField
+                        key={`${field.name}_weight`}
+                        label={field.label}
+                        name={field.name}
+                        type="number"
+                        inputProps={{ min: 0, step: 0.01 }}
+                        value={values?.[field.name + "_weight"]}
+                        onChange={(e) =>
+                          setFieldValue(field.name + "_weight", e.target.value)
+                        }
+                        sx={{ width: 180 }}
+                        size="small"
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">g</InputAdornment>
+                          ),
+                        }}
+                      />
+                    ))}
                   </div>
                   <div
                     style={{
@@ -1109,9 +1353,33 @@ const CreateQuotation = ({
                   >
                     <Typography
                       variant="h7"
-                      className="text-[#4c257e] font-bold pb-5 w-[180px]"
+                      className="text-[#4c257e] font-bold pb-5 w-[200px]"
                     >
-                      CTW for Baguettes
+                      Baguettes
+                    </Typography>
+
+                    <FormControl sx={{ width: 350 }} size="small">
+                      <InputLabel id="diamond-type-label">
+                        Diamond Type
+                      </InputLabel>
+                      <Select
+                        label="Diamond Type"
+                        value={values?.diamondTypeBagutte}
+                        onChange={handleChangeBaguettes}
+                      >
+                        {Object.keys(diamondRateBaguettes).map((type) => (
+                          <MenuItem key={type} value={type}>
+                            {type}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <Typography
+                      variant="h7"
+                      className="text-[#4c257e] font-bold pb-5"
+                    >
+                      Price
                     </Typography>
 
                     {baguetteFields.map((field) => (
@@ -1130,6 +1398,34 @@ const CreateQuotation = ({
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">$</InputAdornment>
+                          ),
+                        }}
+                      />
+                    ))}
+
+                    <Typography
+                      variant="h7"
+                      className="text-[#4c257e] font-bold pb-5"
+                    >
+                      CTW
+                    </Typography>
+
+                    {baguetteFields.map((field) => (
+                      <TextField
+                        key={`${field.name}_weight`}
+                        label={field.label}
+                        name={`${field.name}_weight`}
+                        type="number"
+                        inputProps={{ min: 0, step: 0.01 }}
+                        value={values?.[field.name + "_weight"]}
+                        onChange={(e) =>
+                          setFieldValue(field.name + "_weight", e.target.value)
+                        }
+                        sx={{ width: 180 }}
+                        size="small"
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">g</InputAdornment>
                           ),
                         }}
                       />
