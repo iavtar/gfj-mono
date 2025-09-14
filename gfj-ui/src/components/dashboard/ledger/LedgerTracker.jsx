@@ -85,7 +85,7 @@ const LedgerTracker = () => {
   const [ledgerFormErrors, setLedgerFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(100);
 
   const fetchAllUsers = useCallback(async () => {
     try {

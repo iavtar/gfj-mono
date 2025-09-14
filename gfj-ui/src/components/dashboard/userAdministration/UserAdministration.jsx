@@ -59,7 +59,7 @@ const UserAdministration = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(100);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [serachPayload, setSearchPayload] = useState({});

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
 // import mockData from "./mockResponse.json";
 import { toast } from "react-toastify";
@@ -53,6 +53,7 @@ const Calculator = () => {
   const [transitioning, setTransitioning] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [allClientData, setAllClientData] = useState([]);
+  const [mergedClientData, setMergedClientData] = useState(null);
 
   useEffect(() => {
     const fetchDropdownOptions = async () => {
@@ -89,6 +90,32 @@ const Calculator = () => {
     fetchDropdownOptions();
   }, [token]);
 
+  // Effect to merge client data with agent details
+  useEffect(() => {
+    const mergeClientWithAgentDetails = async () => {
+      if (selectedClient && allClientData.length > 0) {
+        const client = allClientData.find(
+          (client) => client?.id === selectedClient?.value
+        );
+
+        if (client) {
+          try {
+            const agentDetails = await getAgentDetailsByClientId(client?.agentId);
+            const mergedClient = { ...client, ...agentDetails };
+            setMergedClientData(mergedClient);
+          } catch (error) {
+            console.error("Error merging client with agent details:", error);
+            setMergedClientData(client); // Fallback to client only
+          }
+        }
+      } else {
+        setMergedClientData(null);
+      }
+    };
+
+    mergeClientWithAgentDetails();
+  }, [selectedClient, allClientData]);
+
   const handleUpload = async () => {
     const formData = new FormData();
     formData.append("file", file);
@@ -120,6 +147,26 @@ const Calculator = () => {
     }, 300);
   };
 
+  const getAgentDetailsByClientId = useCallback(async (clientId) => {
+    const pageSize = 1000;
+    const response = await apiClient.get(
+      `businessAdmin/getAllAgents?offset=0&size=${pageSize}`
+    );
+
+    if (response?.status === 200) {
+      const userData = response?.data?.data;
+      const matchingUser = userData.find((user) => user?.id === clientId);
+
+      if (matchingUser) {
+        return {
+          agentEmail: matchingUser.email,
+          agentPhoneNumber: matchingUser.phoneNumber
+        };
+      }
+    }
+    return null;
+  }, []);
+
   return (
     <Box className="bg-white rounded-lg p-2 border border-white h-full flex flex-col relative">
       {/* CreateQuotation View - Completely replaces Calculator when active */}
@@ -148,11 +195,7 @@ const Calculator = () => {
           {data != null && (
             <CreateQuotation
               calculatorData={data}
-              client={
-                allClientData.find(
-                  (client) => client?.id === selectedClient?.value
-                ) || null
-              }
+              client={mergedClientData}
             />
           )}
         </Box>

@@ -49,6 +49,7 @@ const columns = [
   { columnLabel: "Quotations", columnKey: "quotations" },
   { columnLabel: "Status", columnKey: "status" },
   { columnLabel: "Tracking ID", columnKey: "trackingId" },
+  { columnLabel: "Invoice Number", columnKey: "invoiceNumber" },
   { columnLabel: "Note", columnKey: "trackingNote" },
 ];
 
@@ -86,10 +87,11 @@ const ShippingTracker = () => {
   const [openTrackingDialog, setOpenTrackingDialog] = useState(false);
   const [trackingShipment, setTrackingShipment] = useState(null);
   const [trackingId, setTrackingId] = useState("");
+  const [invoiceNo, setInvoiceNo] = useState("");
   const [trackingError, setTrackingError] = useState("");
   const [trackingNote, setTrackingNote] = useState("");
 
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(100);
 
   const fetchAllUsers = useCallback(async () => {
     try {
@@ -194,9 +196,8 @@ const ShippingTracker = () => {
 
   const handleRowsPerPageChange = (event) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
-    // Note: In a real implementation, you'd want to update pageSize state
-    // and refetch data with the new pageSize. For now, this is a placeholder.
-    console.log("Rows per page changed to:", newRowsPerPage);
+    setPageSize(newRowsPerPage);
+    setPage(1);
   };
 
   const handleAgentChange = (event) => {
@@ -211,14 +212,6 @@ const ShippingTracker = () => {
     setSelectedClient(selectedValue);
     setPage(1);
   };
-
-  if (isSaving) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <GemLoader />
-      </div>
-    );
-  }
 
   const handlePreview = (quotation) => {
     setPreviewImage(
@@ -254,6 +247,7 @@ const ShippingTracker = () => {
     shipment,
     newStatus,
     trackingId,
+    invoiceNo,
     trackingNote
   ) => {
     setIsSaving(true);
@@ -262,9 +256,15 @@ const ShippingTracker = () => {
         if (!trackingId) {
           throw new Error("Tracking ID is required for Shipment");
         }
+        const requestBody = {
+          shippingId: shipment?.shippingId,
+          trackingId: trackingId,
+          invoiceNumber: invoiceNo,
+          trackingNote: trackingNote,
+        }
         await apiClient.post(
-          `/shipping/addTrackingId?shippingId=${shipment?.shippingId}&trackingId=${trackingId}&trackingNote=${trackingNote}`,
-          null,
+          `/shipping/addTrackingId`,
+          requestBody,
           {
             headers: {
               "Content-Type": "application/json",
@@ -302,6 +302,7 @@ const ShippingTracker = () => {
       // Open tracking dialog instead of directly changing status
       setTrackingShipment(shipment);
       setTrackingId("");
+      setInvoiceNo("");
       setTrackingError("");
       setTrackingNote("");
       setOpenTrackingDialog(true);
@@ -315,6 +316,7 @@ const ShippingTracker = () => {
     setOpenTrackingDialog(false);
     setTrackingShipment(null);
     setTrackingId("");
+    setInvoiceNo("");
     setTrackingError("");
     setTrackingNote("");
   };
@@ -330,9 +332,24 @@ const ShippingTracker = () => {
         trackingShipment,
         "shipped",
         trackingId.trim(),
+        invoiceNo.trim(),
         trackingNote.trim()
       );
       handleTrackingDialogClose();
+    }
+  };
+
+  const handleStatusFilterChange = (event) => {
+    const selectedValue = event.target.value;
+    setStatusFilter(selectedValue);
+    setPage(1); // Reset to first page when changing status filter
+
+    // If status is "all", clear search payload to show all quotations
+    if (selectedValue === "all") {
+      setSearchPayload({});
+    } else {
+      // Create search payload with status filter
+      setSearchPayload({ status: selectedValue });
     }
   };
 
@@ -428,6 +445,15 @@ const ShippingTracker = () => {
     { label: "Zip Code", key: "zipCode", fallback: "No Zip Code" },
     { label: "EIN Number", key: "einNumber", fallback: "No EIN Number" },
   ];
+
+  // Show loading state when saving
+  if (isSaving) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <GemLoader />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
@@ -575,7 +601,7 @@ const ShippingTracker = () => {
                 <FormControl fullWidth variant="outlined">
                   <Select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={handleStatusFilterChange}
                     displayEmpty
                     startAdornment={
                       <InputAdornment position="start">
@@ -798,6 +824,7 @@ const ShippingTracker = () => {
                           <FormControl size="small" sx={{ minWidth: 120 }}>
                             <Select
                               value={shipment?.status || "pending"}
+                              disabled = {roles?.[0] === "agent"}
                               onChange={(e) =>
                                 handleStatusSelectChange(
                                   shipment,
@@ -961,6 +988,25 @@ const ShippingTracker = () => {
                               sx={{ fontStyle: "italic" }}
                             >
                               Tracking ID not found
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ padding: "12px 16px" }}>
+                          {shipment?.invoiceNumber ? (
+                            <Typography
+                              variant="body2"
+                              className="font-mono text-gray-800 bg-gray-100 px-2 py-1 rounded"
+                              sx={{ fontFamily: "monospace" }}
+                            >
+                              {shipment?.invoiceNumber}
+                            </Typography>
+                          ) : (
+                            <Typography
+                              variant="body2"
+                              className="italic text-gray-500"
+                              sx={{ fontStyle: "italic" }}
+                            >
+                              Invoice no. not found
                             </Typography>
                           )}
                         </TableCell>
@@ -1286,6 +1332,39 @@ const ShippingTracker = () => {
                   },
                 }}
                 sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#f8fafc",
+                  },
+                }}
+              />
+
+              <TextField
+                fullWidth
+                label="Invoice Number"
+                variant="outlined"
+                value={invoiceNo}
+                onChange={(e) => {
+                  setInvoiceNo(e.target.value);
+                  if (trackingError) setTrackingError("");
+                }}
+                error={!!trackingError}
+                helperText={trackingError}
+                placeholder="Enter Invoice Number..."
+                InputProps={{
+                  sx: {
+                    borderRadius: "12px",
+                    "& .MuiOutlinedInput-root": {
+                      "&:hover fieldset": {
+                        borderColor: "#4c257e",
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: "#4c257e",
+                      },
+                    },
+                  },
+                }}
+                sx={{
+                  mt: 2,
                   "& .MuiOutlinedInput-root": {
                     backgroundColor: "#f8fafc",
                   },

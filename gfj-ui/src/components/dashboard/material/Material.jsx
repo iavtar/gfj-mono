@@ -45,7 +45,7 @@ import MaterialSearch from "./MaterialSearch";
 
 const columns = [
   { columnLabel: "Title", columnKey: "title" },
-  { columnLabel: "Price", columnKey: "price" },
+  { columnLabel: "Value", columnKey: "price" },
   { columnLabel: "Actions", columnKey: "actions" },
 ];
 
@@ -56,7 +56,7 @@ const Material = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(100);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [serachPayload, setSearchPayload] = useState({});
@@ -300,18 +300,23 @@ const Material = () => {
                         }`}
                         sx={{ "&:hover": { backgroundColor: "#f9fafb" } }}
                       >
-                        <TableCell sx={{ borderBottom: "1px solid #f3f4f6" }}>
-                          {material.title}
+                        <TableCell sx={{ padding: "12px 16px" }}>
+                          <Typography
+                            variant="body2"
+                            className="font-semibold text-green-600"
+                          >
+                            {material.title}
+                          </Typography>
                         </TableCell>
                         <TableCell sx={{ padding: "12px 16px" }}>
                           <Typography
                             variant="body2"
                             className="font-semibold text-green-600"
                           >
-                            ₹ {material?.price?.toFixed(2) || "0.00"}
+                            {material?.price?.toFixed(2) || "0.00"}
                           </Typography>
                         </TableCell>
-                        <TableCell sx={{ borderBottom: "1px solid #f3f4f6" }}>
+                        <TableCell>
                           <EditIcon
                             style={{ cursor: "pointer", marginRight: 8 }}
                             color="primary"
@@ -324,23 +329,23 @@ const Material = () => {
                               },
                             }}
                           />
-                          <DeleteIcon
-                            disabled={[1, 2, 3].includes(material?.id)}
-                            style={{ cursor: [1, 2, 3].includes(material?.id) ? "not-allowed" : "pointer" }}
-                            color={[1, 2, 3].includes(material?.id) ? "disabled" : "error"}
+                          {/* <DeleteIcon
+                            disabled={[1, 2, 3, 4].includes(material?.id)}
+                            style={{ cursor: [1, 2, 3, 4].includes(material?.id) ? "not-allowed" : "pointer" }}
+                            color={[1, 2, 3, 4].includes(material?.id) ? "disabled" : "error"}
                             onClick={() => {
-                              if ([1, 2, 3].includes(material?.id)) return;
+                              if ([1, 2, 3, 4].includes(material?.id)) return;
                               handleDeleteMaterial(material);
                             }}
-                            titleAccess={[1, 2, 3].includes(material?.id) ? "Delete (Disabled)" : "Delete"}
+                            titleAccess={[1, 2, 3, 4].includes(material?.id) ? "Delete (Disabled)" : "Delete"}
                             sx={{
-                              opacity: [1, 2, 3].includes(material?.id) ? 0.5 : 1,
+                              opacity: [1, 2, 3, 4].includes(material?.id) ? 0.5 : 1,
                               "&:hover": {
-                                transform: [1, 2, 3].includes(material?.id) ? "none" : "scale(1.1)",
-                                transition: [1, 2, 3].includes(material?.id) ? "none" : "transform 0.2s ease-in-out",
+                                transform: [1, 2, 3, 4].includes(material?.id) ? "none" : "scale(1.1)",
+                                transition: [1, 2, 3, 4].includes(material?.id) ? "none" : "transform 0.2s ease-in-out",
                               },
                             }}
-                          />
+                          /> */}
                         </TableCell>
                       </TableRow>
                     ))}

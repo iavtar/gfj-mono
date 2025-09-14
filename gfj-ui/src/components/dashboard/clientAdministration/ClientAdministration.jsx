@@ -60,7 +60,7 @@ const ClientAdministration = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [dropdownUsers, setDropdownUsers] = useState({});
   const [selectedAgent, setSelectedAgent] = useState("all");
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(100);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchPayload, setSearchPayload] = useState({});
@@ -73,7 +73,6 @@ const ClientAdministration = () => {
     let userMap = {};
     if (response?.status === 200) {
       const userData = response?.data?.data;
-      console.log(userData);
       userMap = {
         ...Object.fromEntries(userData.map((user) => [user.id, user.username])),
         all: "All",

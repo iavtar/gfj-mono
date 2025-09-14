@@ -67,7 +67,6 @@ const columns = [
   { columnLabel: "Actions", columnKey: "actions" },
 ];
 
-// Status color configuration - easily changeable root variables
 const STATUS_COLORS = {
   new: {
     background: "#e0f2fe", // Light blue
@@ -128,6 +127,7 @@ const QuotationAdministration = () => {
   const [openPreview, setOpenPreview] = useState(false);
   const [quotationDetails, setQuotationDetails] = useState({});
   const [quotationTable, setQuotationTable] = useState([]);
+  const [quotationDescription, setQuotationDescription] = useState("");
   const [quotationid, setQuotationId] = useState("");
   const [ischild, setIsChild] = useState("");
   const [totalsSection, setTotalsSection] = useState({});
@@ -325,7 +325,7 @@ const QuotationAdministration = () => {
     ));
   };
 
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(100);
   const fetchAllUsers = useCallback(async () => {
     try {
       const response = await apiClient.get(
@@ -437,24 +437,35 @@ const QuotationAdministration = () => {
   const handleRowsPerPageChange = (event) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
     setPageSize(newRowsPerPage);
-    setPage(1); // Reset to first page when changing page size
-    // The useEffect will trigger fetchQuotations with the new pageSize
+    setPage(1);
   };
 
   const handleAgentChange = (event) => {
     const selectedValue = event.target.value;
     setSelectedAgent(selectedValue);
-    setPage(1); // Reset to first page when changing agent
-    // Fetch clients for the selected agent
+    setPage(1);
     fetchClients(selectedValue);
   };
 
   const handleClientChange = (event) => {
     const selectedValue = event.target.value;
     setSelectedClient(selectedValue);
-    setPage(1); // Reset to first page when changing client
-    // Reset selected quotations when client changes
+    setPage(1);
     setSelectedQuotations([]);
+  };
+
+  const handleStatusFilterChange = (event) => {
+    const selectedValue = event.target.value;
+    setStatusFilter(selectedValue);
+    setPage(1); // Reset to first page when changing status filter
+
+    // If status is "all", clear search payload to show all quotations
+    if (selectedValue === "all") {
+      setSearchPayload({});
+    } else {
+      // Create search payload with status filter
+      setSearchPayload({ quotationStatus: selectedValue });
+    }
   };
 
   const handleSelectQuotation = (quotationId) => {
@@ -538,6 +549,7 @@ const QuotationAdministration = () => {
       setTotalsSection(data?.totalsSection || {});
       setQuotationClient(data?.client || {});
       setCalculatorData(data?.calculatorData || {});
+      setQuotationDescription(data?.description || "");
 
       if (isChild) {
         const parentData = JSON.parse(parentQuotation?.data);
@@ -824,51 +836,6 @@ const QuotationAdministration = () => {
                 </Box>
               )}
 
-              {/* Status Filter */}
-              <Box className="w-full md:w-48">
-                <FormControl fullWidth variant="outlined">
-                  <Select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    displayEmpty
-                    startAdornment={
-                      <InputAdornment position="start">
-                        <FilterListIcon className="text-gray-400" />
-                      </InputAdornment>
-                    }
-                    sx={{
-                      borderRadius: "8px",
-                      backgroundColor: "#f8fafc",
-                      "& .MuiOutlinedInput-root": {
-                        "&:hover fieldset": {
-                          borderColor: "#4c257e",
-                        },
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#4c257e",
-                        },
-                      },
-                    }}
-                  >
-                    <MenuItem value="all">All Status</MenuItem>
-                    <MenuItem value="new">New</MenuItem>
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="approved">Approved</MenuItem>
-                    <MenuItem value="declined">Declined</MenuItem>
-                    <MenuItem value="send_to_manufacture">
-                      Send to Manufacture
-                    </MenuItem>
-                    <MenuItem value="manufacturing complete">
-                      Manufacturing Complete
-                    </MenuItem>
-                    <MenuItem value="sentforshipping">Sent for Shipping</MenuItem>
-                    <MenuItem value="shipped">Shipped</MenuItem>
-                    <MenuItem value="delivered">Delivered</MenuItem>
-                    <MenuItem value="returned">Returned</MenuItem>
-                    <MenuItem value="cancelled">Cancelled</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-
               {/* Client Filter */}
               <Box className="w-full md:w-48">
                 <FormControl fullWidth variant="outlined">
@@ -903,6 +870,51 @@ const QuotationAdministration = () => {
                         {value}
                       </MenuItem>
                     ))}
+                  </Select>
+                </FormControl>
+              </Box>
+
+              {/* Status Filter */}
+              <Box className="w-full md:w-48">
+                <FormControl fullWidth variant="outlined">
+                  <Select
+                    value={statusFilter}
+                    onChange={handleStatusFilterChange}
+                    displayEmpty
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <FilterListIcon className="text-gray-400" />
+                      </InputAdornment>
+                    }
+                    sx={{
+                      borderRadius: "8px",
+                      backgroundColor: "#f8fafc",
+                      "& .MuiOutlinedInput-root": {
+                        "&:hover fieldset": {
+                          borderColor: "#4c257e",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#4c257e",
+                        },
+                      },
+                    }}
+                  >
+                    <MenuItem value="all">All Status</MenuItem>
+                    <MenuItem value="new">New</MenuItem>
+                    {/* <MenuItem value="pending">Pending</MenuItem> */}
+                    {/* <MenuItem value="approved">Approved</MenuItem> */}
+                    {/* <MenuItem value="declined">Declined</MenuItem> */}
+                    <MenuItem value="send_to_manufacture">
+                      Send to Manufacture
+                    </MenuItem>
+                    <MenuItem value="manufacturing complete">
+                      Manufacturing Complete
+                    </MenuItem>
+                    <MenuItem value="sentforshipping">Sent for Shipping</MenuItem>
+                    <MenuItem value="shipped">Shipped</MenuItem>
+                    <MenuItem value="delivered">Delivered</MenuItem>
+                    <MenuItem value="returned">Returned</MenuItem>
+                    <MenuItem value="cancelled">Cancelled</MenuItem>
                   </Select>
                 </FormControl>
               </Box>
@@ -1194,9 +1206,9 @@ const QuotationAdministration = () => {
                                   handleStatusChange(quotation, e.target.value)
                                 }
                                 disabled={
-                                  (roles[0] === "agent" &&
-                                    quotation?.quotationStatus ===
-                                      "declined") ||
+                                  // (roles[0] === "agent" &&
+                                  //   quotation?.quotationStatus ===
+                                  //     "declined") ||
                                   [
                                     "manufacturing complete",
                                     "sentforshipping",
@@ -1260,11 +1272,11 @@ const QuotationAdministration = () => {
                               >
                                 <MenuItem
                                   value="new"
-                                  disabled={
-                                    !["pending"].includes(
-                                      quotation?.quotationStatus
-                                    )
-                                  }
+                                  // disabled={
+                                  //   !["pending"].includes(
+                                  //     quotation?.quotationStatus
+                                  //   )
+                                  // }
                                   sx={{
                                     color: STATUS_COLORS.new.text,
                                     backgroundColor: STATUS_COLORS.new.background,
@@ -1275,7 +1287,7 @@ const QuotationAdministration = () => {
                                 >
                                   New
                                 </MenuItem>
-                                <MenuItem
+                                {/* <MenuItem
                                   value="pending"
                                   disabled={
                                     !["new"].includes(
@@ -1293,8 +1305,8 @@ const QuotationAdministration = () => {
                                   {roles[0] === "business_admin"
                                     ? "Pending for Approval"
                                     : "Send for Approval"}
-                                </MenuItem>
-                                <MenuItem
+                                </MenuItem> */}
+                                {/* <MenuItem
                                   value="approved"
                                   disabled={
                                     roles[0] !== "business_admin" ||
@@ -1307,13 +1319,13 @@ const QuotationAdministration = () => {
                                     color: STATUS_COLORS.approved.text,
                                     backgroundColor: STATUS_COLORS.approved.background,
                                     "&:hover": {
-                                      backgroundColor: "#16a34a", // Darker green
+                                      backgroundColor: "#27ff76ff", // Darker green
                                     },
                                   }}
                                 >
                                   Approved
-                                </MenuItem>
-                                <MenuItem
+                                </MenuItem> */}
+                                {/* <MenuItem
                                   value="declined"
                                   disabled={roles[0] !== "business_admin"}
                                   sx={{
@@ -1325,14 +1337,14 @@ const QuotationAdministration = () => {
                                   }}
                                 >
                                   Declined
-                                </MenuItem>
+                                </MenuItem> */}
                                 <MenuItem
                                   value="send_to_manufacture"
-                                  disabled={
-                                    !["approved"].includes(
-                                      quotation?.quotationStatus
-                                    )
-                                  }
+                                  // disabled={
+                                  //   !["approved"].includes(
+                                  //     quotation?.quotationStatus
+                                  //   )
+                                  // }
                                   sx={{
                                     color: STATUS_COLORS.send_to_manufacture.text,
                                     backgroundColor: STATUS_COLORS.send_to_manufacture.background,
@@ -1803,6 +1815,7 @@ const QuotationAdministration = () => {
           <CreateQuotation
             isEdit={true}
             quotationDetails={quotationDetails}
+            quotationDescription={quotationDescription}
             quotationTable={quotationTable}
             client={quotationClient}
             totalsSection={totalsSection}

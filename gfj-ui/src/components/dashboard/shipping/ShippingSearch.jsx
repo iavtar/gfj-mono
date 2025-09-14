@@ -13,6 +13,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 const initialFormData = {
   shippingId: "",
   trackingId: "",
+  invoiceNumber: "",
   note: "",
 };
 
@@ -23,7 +24,8 @@ const ShippingSearch = ({setSearchPayload, setSearchOpen}) => {
     const requestPayload = {
       shippingId: values?.shippingId,
       trackingId: values?.trackingId,
-      note: values?.note,
+      invoiceNumber: values?.invoiceNumber,
+      trackingNote: values?.note,
     };
 
     setSearchPayload(requestPayload)
@@ -109,6 +111,22 @@ const ShippingSearch = ({setSearchPayload, setSearchOpen}) => {
               onBlur={formik.handleBlur}
               error={formik.touched.trackingId && Boolean(formik.errors.trackingId)}
               helperText={formik.touched.trackingId && formik.errors.trackingId}
+            />
+          </div>
+
+          {/* Invoice Number */}
+          <div
+            style={{ flex: "0 0 calc(33% - 10px)", width: "calc(33% - 10px)" }}
+          >
+            <TextField
+              fullWidth
+              label="Invoice Number"
+              name="invoiceNumber"
+              value={formik.values.invoiceNumber}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.invoiceNumber && Boolean(formik.errors.invoiceNumber)}
+              helperText={formik.touched.invoiceNumber && formik.errors.invoiceNumber}
             />
           </div>
 
