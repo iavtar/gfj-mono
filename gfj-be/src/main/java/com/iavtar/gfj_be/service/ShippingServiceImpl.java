@@ -74,6 +74,18 @@ public class ShippingServiceImpl implements ShippingService {
                             st -> st.getTrackingId() != null ? st.getTrackingId() : "",
                             (a, b) -> a
                     ));
+            Map<String, String> shippingInvoiceNumberById = shippingTrackers.stream()
+                    .collect(Collectors.toMap(
+                            ShippingTracker::getShippingId,
+                            st -> st.getInvoiceNumber() != null ? st.getInvoiceNumber() : "",
+                            (a, b) -> a
+                    ));
+            Map<String, String> shippingTrackingNoteById = shippingTrackers.stream()
+                    .collect(Collectors.toMap(
+                            ShippingTracker::getShippingId,
+                            st -> st.getTrackingNote() != null ? st.getTrackingNote() : "",
+                            (a, b) -> a
+                    ));
             List<Map<String, Object>> shippingGroups = grouped.entrySet().stream()
                     .map(entry -> {
                         Map<String, Object> item = new HashMap<>();
@@ -82,6 +94,8 @@ public class ShippingServiceImpl implements ShippingService {
                         item.put("count", entry.getValue().size());
                         item.put("status", shippingStatusById.get(entry.getKey()));
                         item.put("trackingId", shippingTrackingIdById.get(entry.getKey()));
+                        item.put("invoiceNumber", shippingInvoiceNumberById.get(entry.getKey()));
+                        item.put("trackingNote", shippingTrackingNoteById.get(entry.getKey()));
                         item.put("clientDetails", clientRepository.findById(entry.getValue().getFirst().getClientId()));
                         return item;
                     })
