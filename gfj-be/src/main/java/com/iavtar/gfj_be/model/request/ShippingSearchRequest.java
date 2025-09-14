@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class ShippingSearchRequest {
     private String shippingId;
     private String trackingId;
+    private String invoiceNumber;
     private String status;
     private LocalDateTime createdAfter;
     private LocalDateTime createdBefore;

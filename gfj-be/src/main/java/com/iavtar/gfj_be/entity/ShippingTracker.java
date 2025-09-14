@@ -24,6 +24,10 @@ public class ShippingTracker {
 
     private String trackingId;
 
+    private String invoiceNumber;
+
+    private String trackingNote;
+
     private String status;
 
     private Date createdAt;

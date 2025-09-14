@@ -1,5 +1,6 @@
 package com.iavtar.gfj_be.service;
 
+import com.iavtar.gfj_be.model.request.AddTrackingIdRequest;
 import com.iavtar.gfj_be.model.request.ShippingSearchRequest;
 import com.iavtar.gfj_be.model.request.UpdateShippingTrackingRequest;
 import com.iavtar.gfj_be.model.response.PagedUserResponse;
@@ -21,7 +22,7 @@ public interface ShippingService {
 
     ResponseEntity<?> getAllShipping(int offset, int size);
 
-    ResponseEntity<?> addTrackingId(String shippingId, String trackingId);
+    ResponseEntity<?> addTrackingId(AddTrackingIdRequest request);
 
     ResponseEntity<?> updateTrackingStatus(UpdateShippingTrackingRequest request);
 

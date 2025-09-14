@@ -2,6 +2,7 @@ package com.iavtar.gfj_be.service;
 
 import com.iavtar.gfj_be.entity.Quotation;
 import com.iavtar.gfj_be.entity.ShippingTracker;
+import com.iavtar.gfj_be.model.request.AddTrackingIdRequest;
 import com.iavtar.gfj_be.model.request.ShippingSearchRequest;
 import com.iavtar.gfj_be.model.request.UpdateShippingTrackingRequest;
 import com.iavtar.gfj_be.model.response.PagedUserResponse;
@@ -100,45 +101,47 @@ public class ShippingServiceImpl implements ShippingService {
     }
 
     @Override
-    public ResponseEntity<?> addTrackingId(String shippingId, String trackingId) {
+    public ResponseEntity<?> addTrackingId(AddTrackingIdRequest request) {
         try {
-            log.info("Adding tracking ID {} to shipping ID: {}", trackingId, shippingId);
-            if (shippingId == null || shippingId.trim().isEmpty()) {
+            log.info("Adding tracking ID {} to shipping ID: {}", request.getTrackingId(), request.getShippingId());
+            if (request.getShippingId() == null || request.getShippingId().trim().isEmpty()) {
                 log.error("Validation failed - shipping ID is required");
                 ServiceResponse errorResponse = ServiceResponse.builder()
                         .message("Shipping ID is required")
                         .build();
                 return ResponseEntity.badRequest().body(errorResponse);
             }
-            if (trackingId == null || trackingId.trim().isEmpty()) {
+            if (request.getTrackingId() == null || request.getTrackingId().trim().isEmpty()) {
                 log.error("Validation failed - tracking ID is required");
                 ServiceResponse errorResponse = ServiceResponse.builder()
                         .message("Tracking ID is required")
                         .build();
                 return ResponseEntity.badRequest().body(errorResponse);
             }
-            Optional<ShippingTracker> shippingTrackerOptional = shippingRepository.findByShippingId(shippingId);
+            Optional<ShippingTracker> shippingTrackerOptional = shippingRepository.findByShippingId(request.getShippingId());
             if (shippingTrackerOptional.isEmpty()) {
-                log.error("Shipping tracker not found with shipping ID: {}", shippingId);
+                log.error("Shipping tracker not found with shipping ID: {}", request.getShippingId());
                 ServiceResponse errorResponse = ServiceResponse.builder()
-                        .message("Shipping tracker not found with shipping ID: " + shippingId)
+                        .message("Shipping tracker not found with shipping ID: " + request.getShippingId())
                         .build();
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
             }
             ShippingTracker shippingTracker = shippingTrackerOptional.get();
-            shippingTracker.setTrackingId(trackingId);
+            shippingTracker.setTrackingId(request.getTrackingId());
             shippingTracker.setStatus("shipped");
+            shippingTracker.setInvoiceNumber(request.getInvoiceNumber());
+            shippingTracker.setTrackingNote(request.getTrackingNote());
             shippingRepository.save(shippingTracker);
-            List<Quotation> quotations = quotationRepository.findAllByShippingId(shippingId);
+            List<Quotation> quotations = quotationRepository.findAllByShippingId(request.getShippingId());
             quotations.forEach(quotation -> {
                 quotation.setQuotationStatus("shipped");
-                quotation.setTrackingId(trackingId);
+                quotation.setTrackingId(request.getTrackingId());
                 quotation.getFinalQuotations().forEach(finalQuotation -> {
-                    finalQuotation.setTrackingId(trackingId);
+                    finalQuotation.setTrackingId(request.getTrackingId());
                 });
                 quotationRepository.save(quotation);
             });
-            log.info("Successfully set tracking ID {} on shipping tracker: {}", trackingId, shippingId);
+            log.info("Successfully set tracking ID {} on shipping tracker: {}", request.getTrackingId(), request.getShippingId());
             ServiceResponse response = ServiceResponse.builder()
                     .message("Tracking ID added successfully")
                     .build();
@@ -186,6 +189,7 @@ public class ShippingServiceImpl implements ShippingService {
         Page<ShippingTracker> shippingTrackerPage = shippingRepository.searchShippingTrackers(
             searchRequest.getShippingId(),
             searchRequest.getTrackingId(),
+            searchRequest.getInvoiceNumber(),
             searchRequest.getStatus(),
             searchRequest.getCreatedAfter(),
             searchRequest.getCreatedBefore(),

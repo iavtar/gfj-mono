@@ -274,7 +274,6 @@ public class AgentController {
             ServiceResponse errorResponse = ServiceResponse.builder().message("Error uploading quotations image").build();
             return ResponseEntity.internalServerError().body(errorResponse);
         }
-
     }
 
     @PostMapping("/finalQuotation/upload")
