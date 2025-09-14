@@ -435,7 +435,7 @@ const QuotationAdministration = () => {
   };
 
   const handleRowsPerPageChange = (event) => {
-    const newRowsPerPage = parseInt(event.target.value, 100);
+    const newRowsPerPage = parseInt(event.target.value, 10);
     setPageSize(newRowsPerPage);
     setPage(1);
   };
@@ -901,9 +901,9 @@ const QuotationAdministration = () => {
                   >
                     <MenuItem value="all">All Status</MenuItem>
                     <MenuItem value="new">New</MenuItem>
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="approved">Approved</MenuItem>
-                    <MenuItem value="declined">Declined</MenuItem>
+                    {/* <MenuItem value="pending">Pending</MenuItem> */}
+                    {/* <MenuItem value="approved">Approved</MenuItem> */}
+                    {/* <MenuItem value="declined">Declined</MenuItem> */}
                     <MenuItem value="send_to_manufacture">
                       Send to Manufacture
                     </MenuItem>
@@ -1206,9 +1206,9 @@ const QuotationAdministration = () => {
                                   handleStatusChange(quotation, e.target.value)
                                 }
                                 disabled={
-                                  (roles[0] === "agent" &&
-                                    quotation?.quotationStatus ===
-                                      "declined") ||
+                                  // (roles[0] === "agent" &&
+                                  //   quotation?.quotationStatus ===
+                                  //     "declined") ||
                                   [
                                     "manufacturing complete",
                                     "sentforshipping",
@@ -1272,11 +1272,11 @@ const QuotationAdministration = () => {
                               >
                                 <MenuItem
                                   value="new"
-                                  disabled={
-                                    !["pending"].includes(
-                                      quotation?.quotationStatus
-                                    )
-                                  }
+                                  // disabled={
+                                  //   !["pending"].includes(
+                                  //     quotation?.quotationStatus
+                                  //   )
+                                  // }
                                   sx={{
                                     color: STATUS_COLORS.new.text,
                                     backgroundColor: STATUS_COLORS.new.background,
@@ -1287,7 +1287,7 @@ const QuotationAdministration = () => {
                                 >
                                   New
                                 </MenuItem>
-                                <MenuItem
+                                {/* <MenuItem
                                   value="pending"
                                   disabled={
                                     !["new"].includes(
@@ -1305,8 +1305,8 @@ const QuotationAdministration = () => {
                                   {roles[0] === "business_admin"
                                     ? "Pending for Approval"
                                     : "Send for Approval"}
-                                </MenuItem>
-                                <MenuItem
+                                </MenuItem> */}
+                                {/* <MenuItem
                                   value="approved"
                                   disabled={
                                     roles[0] !== "business_admin" ||
@@ -1324,8 +1324,8 @@ const QuotationAdministration = () => {
                                   }}
                                 >
                                   Approved
-                                </MenuItem>
-                                <MenuItem
+                                </MenuItem> */}
+                                {/* <MenuItem
                                   value="declined"
                                   disabled={roles[0] !== "business_admin"}
                                   sx={{
@@ -1337,14 +1337,14 @@ const QuotationAdministration = () => {
                                   }}
                                 >
                                   Declined
-                                </MenuItem>
+                                </MenuItem> */}
                                 <MenuItem
                                   value="send_to_manufacture"
-                                  disabled={
-                                    !["approved"].includes(
-                                      quotation?.quotationStatus
-                                    )
-                                  }
+                                  // disabled={
+                                  //   !["approved"].includes(
+                                  //     quotation?.quotationStatus
+                                  //   )
+                                  // }
                                   sx={{
                                     color: STATUS_COLORS.send_to_manufacture.text,
                                     backgroundColor: STATUS_COLORS.send_to_manufacture.background,

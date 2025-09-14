@@ -108,7 +108,7 @@ const Material = () => {
   };
 
   const handleRowsPerPageChange = (event) => {
-    const newRowsPerPage = parseInt(event.target.value, 100);
+    const newRowsPerPage = parseInt(event.target.value, 10);
     setPageSize(newRowsPerPage);
     setPage(1); // Reset to first page when changing page size
     // The useEffect will trigger fetchMaterials with the new pageSize

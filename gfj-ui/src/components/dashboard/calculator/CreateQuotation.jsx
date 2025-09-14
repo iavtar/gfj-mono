@@ -274,6 +274,7 @@ const CreateQuotation = ({
           diamondSetting: client?.diamondSettingPrice?.toFixed(2) || "0.00",
           profitLabour: client?.profitAndLabourPercentage?.toFixed(2) || "0.00",
           purity: "43",
+          selectedCurrency: quotationDetails?.selectedCurrency || "USD",
           diamondTypeRound: "VS2 si1",
           diamondTypeBagutte: "VS G-H Baggs",
           roundsRange1: rateRounds["0.50-2.30"] || "0.00",
@@ -303,7 +304,7 @@ const CreateQuotation = ({
       setShowValuesSection(true);
       setContentRows(quotationTable);
       setDescription(quotationDescription || "");
-      console.log("Loaded description:", quotationDescription);
+      setSelectedCurrency(quotationDetails?.selectedCurrency || "USD");
       return;
     }
     const fetchMaterials = async () => {
@@ -904,7 +905,7 @@ const CreateQuotation = ({
         if (isChild) {
           setQuotationNumber(quotationId);
           uploadImage(quotationId, false);
-          // uploadImage(quotationId, true);
+          uploadImage(quotationId, true);
           toast.success(`Quotation Saved Successfully!`);
         } else {
           const newQuotationNumber = response?.data?.quotationId || quotationId;
@@ -1013,8 +1014,12 @@ const CreateQuotation = ({
           try {
             let response;
             if (isChild) {
+              let urlString = `/agent/finalQuotation/upload?quotationId=${quotationId}`;
+              if (generateForShipper) {
+                urlString += "&forShipper=true";
+              }
               response = await apiClient.post(
-                `/agent/finalQuotation/upload?quotationId=${quotationId}`,
+                urlString,
                 formData,
                 {
                   headers: {

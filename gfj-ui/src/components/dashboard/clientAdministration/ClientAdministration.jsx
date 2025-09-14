@@ -73,7 +73,6 @@ const ClientAdministration = () => {
     let userMap = {};
     if (response?.status === 200) {
       const userData = response?.data?.data;
-      console.log(userData);
       userMap = {
         ...Object.fromEntries(userData.map((user) => [user.id, user.username])),
         all: "All",
@@ -156,7 +155,7 @@ const ClientAdministration = () => {
   };
 
   const handleRowsPerPageChange = (event) => {
-    const newRowsPerPage = parseInt(event.target.value, 100);
+    const newRowsPerPage = parseInt(event.target.value, 10);
     setPageSize(newRowsPerPage);
     setPage(1); // Reset to first page when changing page size
     // The useEffect will trigger fetchUsers with the new pageSize

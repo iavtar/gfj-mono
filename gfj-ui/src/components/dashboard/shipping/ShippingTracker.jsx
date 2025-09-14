@@ -49,7 +49,7 @@ const columns = [
   { columnLabel: "Quotations", columnKey: "quotations" },
   { columnLabel: "Status", columnKey: "status" },
   { columnLabel: "Tracking ID", columnKey: "trackingId" },
-  { columnLabel: "Invoice Number", columnKey: "invoiceNo" },
+  { columnLabel: "Invoice Number", columnKey: "invoiceNumber" },
   { columnLabel: "Note", columnKey: "trackingNote" },
 ];
 
@@ -195,7 +195,7 @@ const ShippingTracker = () => {
   };
 
   const handleRowsPerPageChange = (event) => {
-    const newRowsPerPage = parseInt(event.target.value, 100);
+    const newRowsPerPage = parseInt(event.target.value, 10);
     setPageSize(newRowsPerPage);
     setPage(1);
   };
@@ -212,14 +212,6 @@ const ShippingTracker = () => {
     setSelectedClient(selectedValue);
     setPage(1);
   };
-
-  if (isSaving) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <GemLoader />
-      </div>
-    );
-  }
 
   const handlePreview = (quotation) => {
     setPreviewImage(
@@ -264,9 +256,15 @@ const ShippingTracker = () => {
         if (!trackingId) {
           throw new Error("Tracking ID is required for Shipment");
         }
+        const requestBody = {
+          shippingId: shipment?.shippingId,
+          trackingId: trackingId,
+          invoiceNumber: invoiceNo,
+          trackingNote: trackingNote,
+        }
         await apiClient.post(
-          `/shipping/addTrackingId?shippingId=${shipment?.shippingId}&trackingId=${trackingId}&invoiceNo=${invoiceNo}&trackingNote=${trackingNote}`,
-          null,
+          `/shipping/addTrackingId`,
+          requestBody,
           {
             headers: {
               "Content-Type": "application/json",
@@ -351,7 +349,7 @@ const ShippingTracker = () => {
       setSearchPayload({});
     } else {
       // Create search payload with status filter
-      setSearchPayload({ quotationStatus: selectedValue });
+      setSearchPayload({ status: selectedValue });
     }
   };
 
@@ -447,6 +445,15 @@ const ShippingTracker = () => {
     { label: "Zip Code", key: "zipCode", fallback: "No Zip Code" },
     { label: "EIN Number", key: "einNumber", fallback: "No EIN Number" },
   ];
+
+  // Show loading state when saving
+  if (isSaving) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <GemLoader />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
@@ -985,13 +992,13 @@ const ShippingTracker = () => {
                           )}
                         </TableCell>
                         <TableCell sx={{ padding: "12px 16px" }}>
-                          {shipment?.invoiceNo ? (
+                          {shipment?.invoiceNumber ? (
                             <Typography
                               variant="body2"
                               className="font-mono text-gray-800 bg-gray-100 px-2 py-1 rounded"
                               sx={{ fontFamily: "monospace" }}
                             >
-                              {shipment?.invoiceNo}
+                              {shipment?.invoiceNumber}
                             </Typography>
                           ) : (
                             <Typography

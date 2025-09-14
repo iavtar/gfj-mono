@@ -4,17 +4,17 @@ const QuotationStats = ({ quotations }) => {
   const getStats = () => {
     const total = quotations.length;
     const newQuotation = quotations.filter(quotation => quotation?.quotationStatus === 'new').length;
-    const pending = quotations.filter(quotation => quotation?.quotationStatus === 'pending').length;
-    const approved = quotations.filter(quotation => quotation?.quotationStatus === 'approved').length;
-    const declined = quotations.filter(quotation => quotation?.quotationStatus === 'declined').length;
+    const sendToManufacture = quotations.filter(quotation => quotation?.quotationStatus === 'send_to_manufacture').length;
+    const manufacturingComplete = quotations.filter(quotation => quotation?.quotationStatus === 'manufacturing complete').length;
     const sentforshipping = quotations.filter(quotation => quotation?.quotationStatus === 'sentforshipping').length;
+    const shipped = quotations.filter(quotation => quotation?.quotationStatus === 'shipped').length;
 
     return {
       total,
       newQuotation,
-      pending,
-      approved,
-      declined,
+      sendToManufacture,
+      manufacturingComplete,
+      shipped,
       sentforshipping,
     };
   };
@@ -37,30 +37,30 @@ const QuotationStats = ({ quotations }) => {
       textColor: 'text-orange-600'
     },
     {
-      title: 'Pending',
-      value: stats.pending,
+      title: 'Send To Manufacture',
+      value: stats.sendToManufacture,
       icon: '⏳',
       color: 'bg-yellow-500',
       textColor: 'text-yellow-600'
     },
     {
-      title: 'Approved',
-      value: stats.approved,
+      title: 'Manufacturing Complete',
+      value: stats.manufacturingComplete,
       icon: '✅',
       color: 'bg-purple-500',
       textColor: 'text-purple-600'
     },
     {
-      title: 'Declined',
-      value: stats.declined,
-      icon: '🚫',
+      title: 'Sent for Shipping',
+      value: stats.sentforshipping,
+      icon: '🚚',
       color: 'bg-red-500',
       textColor: 'text-red-600'
     },
     {
-      title: 'Sent for Shipping',
-      value: stats.sentforshipping,
-      icon: '🚚',
+      title: 'Shipped',
+      value: stats.shipped,
+      icon: '🚛',
       color: 'bg-green-500',
       textColor: 'text-green-600'
     }

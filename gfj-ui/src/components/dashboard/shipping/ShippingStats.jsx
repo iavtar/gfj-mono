@@ -2,7 +2,6 @@ import React from 'react';
 
 const ShippingStats = ({ shipments }) => {
   const getStats = () => {
-    console.log(shipments);
     const total = shipments.length;
     const pending = shipments.filter(shipment => shipment?.status === 'pending').length;
     const shipped = shipments.filter(shipment => shipment?.status === 'shipped').length;
