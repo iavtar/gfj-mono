@@ -19,7 +19,7 @@ public interface ShippingServiceRepository extends JpaRepository<ShippingTracker
     @Query("SELECT st FROM ShippingTracker st WHERE " +
             "(:shippingId IS NULL OR st.shippingId LIKE %:shippingId%) AND " +
             "(:trackingId IS NULL OR st.trackingId LIKE %:trackingId%) AND " +
-            "(:invoiceNumber IS NULL OR st.trackingId LIKE %:invoiceNumber%) AND " +
+            "(:invoiceNumber IS NULL OR st.invoiceNumber LIKE %:invoiceNumber%) AND " +
             "(:status IS NULL OR st.status LIKE %:status%) AND " +
             "(:createdAfter IS NULL OR st.createdAt >= :createdAfter) AND " +
             "(:createdBefore IS NULL OR st.createdAt <= :createdBefore) AND " +
