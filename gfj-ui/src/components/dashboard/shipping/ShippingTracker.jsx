@@ -49,6 +49,7 @@ const columns = [
   { columnLabel: "Quotations", columnKey: "quotations" },
   { columnLabel: "Status", columnKey: "status" },
   { columnLabel: "Tracking ID", columnKey: "trackingId" },
+  { columnLabel: "Invoice Number", columnKey: "invoiceNo" },
   { columnLabel: "Note", columnKey: "trackingNote" },
 ];
 
@@ -86,6 +87,7 @@ const ShippingTracker = () => {
   const [openTrackingDialog, setOpenTrackingDialog] = useState(false);
   const [trackingShipment, setTrackingShipment] = useState(null);
   const [trackingId, setTrackingId] = useState("");
+  const [invoiceNo, setInvoiceNo] = useState("");
   const [trackingError, setTrackingError] = useState("");
   const [trackingNote, setTrackingNote] = useState("");
 
@@ -254,6 +256,7 @@ const ShippingTracker = () => {
     shipment,
     newStatus,
     trackingId,
+    invoiceNo,
     trackingNote
   ) => {
     setIsSaving(true);
@@ -263,7 +266,7 @@ const ShippingTracker = () => {
           throw new Error("Tracking ID is required for Shipment");
         }
         await apiClient.post(
-          `/shipping/addTrackingId?shippingId=${shipment?.shippingId}&trackingId=${trackingId}&trackingNote=${trackingNote}`,
+          `/shipping/addTrackingId?shippingId=${shipment?.shippingId}&trackingId=${trackingId}&invoiceNo=${invoiceNo}&trackingNote=${trackingNote}`,
           null,
           {
             headers: {
@@ -302,6 +305,7 @@ const ShippingTracker = () => {
       // Open tracking dialog instead of directly changing status
       setTrackingShipment(shipment);
       setTrackingId("");
+      setInvoiceNo("");
       setTrackingError("");
       setTrackingNote("");
       setOpenTrackingDialog(true);
@@ -315,6 +319,7 @@ const ShippingTracker = () => {
     setOpenTrackingDialog(false);
     setTrackingShipment(null);
     setTrackingId("");
+    setInvoiceNo("");
     setTrackingError("");
     setTrackingNote("");
   };
@@ -330,6 +335,7 @@ const ShippingTracker = () => {
         trackingShipment,
         "shipped",
         trackingId.trim(),
+        invoiceNo.trim(),
         trackingNote.trim()
       );
       handleTrackingDialogClose();
@@ -798,6 +804,7 @@ const ShippingTracker = () => {
                           <FormControl size="small" sx={{ minWidth: 120 }}>
                             <Select
                               value={shipment?.status || "pending"}
+                              disabled = {roles?.[0] === "agent"}
                               onChange={(e) =>
                                 handleStatusSelectChange(
                                   shipment,
@@ -961,6 +968,25 @@ const ShippingTracker = () => {
                               sx={{ fontStyle: "italic" }}
                             >
                               Tracking ID not found
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ padding: "12px 16px" }}>
+                          {shipment?.invoiceNo ? (
+                            <Typography
+                              variant="body2"
+                              className="font-mono text-gray-800 bg-gray-100 px-2 py-1 rounded"
+                              sx={{ fontFamily: "monospace" }}
+                            >
+                              {shipment?.invoiceNo}
+                            </Typography>
+                          ) : (
+                            <Typography
+                              variant="body2"
+                              className="italic text-gray-500"
+                              sx={{ fontStyle: "italic" }}
+                            >
+                              Invoice no. not found
                             </Typography>
                           )}
                         </TableCell>
@@ -1286,6 +1312,39 @@ const ShippingTracker = () => {
                   },
                 }}
                 sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#f8fafc",
+                  },
+                }}
+              />
+
+              <TextField
+                fullWidth
+                label="Invoice Number"
+                variant="outlined"
+                value={invoiceNo}
+                onChange={(e) => {
+                  setInvoiceNo(e.target.value);
+                  if (trackingError) setTrackingError("");
+                }}
+                error={!!trackingError}
+                helperText={trackingError}
+                placeholder="Enter Invoice Number..."
+                InputProps={{
+                  sx: {
+                    borderRadius: "12px",
+                    "& .MuiOutlinedInput-root": {
+                      "&:hover fieldset": {
+                        borderColor: "#4c257e",
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: "#4c257e",
+                      },
+                    },
+                  },
+                }}
+                sx={{
+                  mt: 2,
                   "& .MuiOutlinedInput-root": {
                     backgroundColor: "#f8fafc",
                   },

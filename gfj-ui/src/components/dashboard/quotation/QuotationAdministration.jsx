@@ -67,7 +67,6 @@ const columns = [
   { columnLabel: "Actions", columnKey: "actions" },
 ];
 
-// Status color configuration - easily changeable root variables
 const STATUS_COLORS = {
   new: {
     background: "#e0f2fe", // Light blue
@@ -128,6 +127,7 @@ const QuotationAdministration = () => {
   const [openPreview, setOpenPreview] = useState(false);
   const [quotationDetails, setQuotationDetails] = useState({});
   const [quotationTable, setQuotationTable] = useState([]);
+  const [quotationDescription, setQuotationDescription] = useState("");
   const [quotationid, setQuotationId] = useState("");
   const [ischild, setIsChild] = useState("");
   const [totalsSection, setTotalsSection] = useState({});
@@ -437,24 +437,35 @@ const QuotationAdministration = () => {
   const handleRowsPerPageChange = (event) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
     setPageSize(newRowsPerPage);
-    setPage(1); // Reset to first page when changing page size
-    // The useEffect will trigger fetchQuotations with the new pageSize
+    setPage(1);
   };
 
   const handleAgentChange = (event) => {
     const selectedValue = event.target.value;
     setSelectedAgent(selectedValue);
-    setPage(1); // Reset to first page when changing agent
-    // Fetch clients for the selected agent
+    setPage(1);
     fetchClients(selectedValue);
   };
 
   const handleClientChange = (event) => {
     const selectedValue = event.target.value;
     setSelectedClient(selectedValue);
-    setPage(1); // Reset to first page when changing client
-    // Reset selected quotations when client changes
+    setPage(1);
     setSelectedQuotations([]);
+  };
+
+  const handleStatusFilterChange = (event) => {
+    const selectedValue = event.target.value;
+    setStatusFilter(selectedValue);
+    setPage(1); // Reset to first page when changing status filter
+
+    // If status is "all", clear search payload to show all quotations
+    if (selectedValue === "all") {
+      setSearchPayload({});
+    } else {
+      // Create search payload with status filter
+      setSearchPayload({ quotationStatus: selectedValue });
+    }
   };
 
   const handleSelectQuotation = (quotationId) => {
@@ -538,6 +549,7 @@ const QuotationAdministration = () => {
       setTotalsSection(data?.totalsSection || {});
       setQuotationClient(data?.client || {});
       setCalculatorData(data?.calculatorData || {});
+      setQuotationDescription(data?.description || "");
 
       if (isChild) {
         const parentData = JSON.parse(parentQuotation?.data);
@@ -824,12 +836,50 @@ const QuotationAdministration = () => {
                 </Box>
               )}
 
+              {/* Client Filter */}
+              <Box className="w-full md:w-48">
+                <FormControl fullWidth variant="outlined">
+                  <Select
+                    value={selectedClient}
+                    onChange={handleClientChange}
+                    displayEmpty
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <span className="text-gray-400">👤</span>
+                      </InputAdornment>
+                    }
+                    sx={{
+                      borderRadius: "8px",
+                      backgroundColor: "#f8fafc",
+                      "& .MuiOutlinedInput-root": {
+                        "&:hover fieldset": {
+                          borderColor: "#4c257e",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#4c257e",
+                        },
+                      },
+                    }}
+                  >
+                    {Object.entries(dropdownClients).map(([key, value]) => (
+                      <MenuItem
+                        key={key}
+                        value={key}
+                        sx={{ fontSize: "0.875rem" }}
+                      >
+                        {value}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+
               {/* Status Filter */}
               <Box className="w-full md:w-48">
                 <FormControl fullWidth variant="outlined">
                   <Select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={handleStatusFilterChange}
                     displayEmpty
                     startAdornment={
                       <InputAdornment position="start">
@@ -865,44 +915,6 @@ const QuotationAdministration = () => {
                     <MenuItem value="delivered">Delivered</MenuItem>
                     <MenuItem value="returned">Returned</MenuItem>
                     <MenuItem value="cancelled">Cancelled</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-
-              {/* Client Filter */}
-              <Box className="w-full md:w-48">
-                <FormControl fullWidth variant="outlined">
-                  <Select
-                    value={selectedClient}
-                    onChange={handleClientChange}
-                    displayEmpty
-                    startAdornment={
-                      <InputAdornment position="start">
-                        <span className="text-gray-400">👤</span>
-                      </InputAdornment>
-                    }
-                    sx={{
-                      borderRadius: "8px",
-                      backgroundColor: "#f8fafc",
-                      "& .MuiOutlinedInput-root": {
-                        "&:hover fieldset": {
-                          borderColor: "#4c257e",
-                        },
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#4c257e",
-                        },
-                      },
-                    }}
-                  >
-                    {Object.entries(dropdownClients).map(([key, value]) => (
-                      <MenuItem
-                        key={key}
-                        value={key}
-                        sx={{ fontSize: "0.875rem" }}
-                      >
-                        {value}
-                      </MenuItem>
-                    ))}
                   </Select>
                 </FormControl>
               </Box>
@@ -1307,7 +1319,7 @@ const QuotationAdministration = () => {
                                     color: STATUS_COLORS.approved.text,
                                     backgroundColor: STATUS_COLORS.approved.background,
                                     "&:hover": {
-                                      backgroundColor: "#16a34a", // Darker green
+                                      backgroundColor: "#27ff76ff", // Darker green
                                     },
                                   }}
                                 >
@@ -1803,6 +1815,7 @@ const QuotationAdministration = () => {
           <CreateQuotation
             isEdit={true}
             quotationDetails={quotationDetails}
+            quotationDescription={quotationDescription}
             quotationTable={quotationTable}
             client={quotationClient}
             totalsSection={totalsSection}

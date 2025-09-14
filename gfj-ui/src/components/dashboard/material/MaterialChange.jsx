@@ -20,7 +20,7 @@ import apiClient from "../../../app/axiosConfig";
 
 const validationSchema = Yup.object({
   title: Yup.string().required("Title is required"),
-  price: Yup.string().required("Price is required"),
+  price: Yup.string().required("Value is required"),
 });
 
 const initialFormData = {
@@ -123,7 +123,7 @@ const MaterialChange = ({ materialData, isEdit, handleDialogClose }) => {
           >
             <TextField
               fullWidth
-              label="Price"
+              label="Value"
               name="price"
               type="number"
               value={formik.values.price}
@@ -131,13 +131,13 @@ const MaterialChange = ({ materialData, isEdit, handleDialogClose }) => {
               onBlur={formik.handleBlur}
               error={formik.touched.price && Boolean(formik.errors.price)}
               helperText={formik.touched.price && formik.errors.price}
-              InputProps={formik.values.price && {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    ₹
-                  </InputAdornment>
-                ),
-              }}
+              // InputProps={formik.values.price && {
+              //   startAdornment: (
+              //     <InputAdornment position="start">
+              //       ₹
+              //     </InputAdornment>
+              //   ),
+              // }}
             />
           </div>
         </div>

@@ -63,6 +63,7 @@ const CreateQuotation = ({
   quotationDetails,
   quotationTable,
   quotationId,
+  quotationDescription,
   parentContentRows,
   parentTotalsSection,
   parentQuotationDetails,
@@ -91,7 +92,7 @@ const CreateQuotation = ({
     profitLabour: client?.profitAndLabourPercentage?.toFixed(2) || "0.00",
     purity: "43",
     diamondTypeRound: "VS2 si1",
-    diamondTypeBagutte: "VS2 si1",
+    diamondTypeBagutte: "VS G-H Baggs",
     roundsRange1: "10.00",
     roundsRange1_weight: "0.00",
     roundsRange2: "20.00",
@@ -179,60 +180,60 @@ const CreateQuotation = ({
   };
 
   const diamondRateBaguettes = {
-    "VS2 si1": {
-      "1.50-2.10": 350,
-      "2.20-2.60": 380,
-      "2.70-4.00": 450,
-      "Above-4.00": 550,
-    },
-    "VS G-H": {
+    // "VS2 si1": {
+    //   "1.50-2.10": 350,
+    //   "2.20-2.60": 380,
+    //   "2.70-4.00": 450,
+    //   "Above-4.00": 550,
+    // },
+    "VS G-H Baggs": {
       "1.50-2.10": 400,
       "2.20-2.60": 430,
       "2.70-4.00": 500,
       "Above-4.00": 600,
     },
-    "VS D-F": {
-      "1.50-2.10": 500,
-      "2.20-2.60": 530,
-      "2.70-4.00": 550,
-      "Above-4.00": 650,
-    },
-    "Lab grown (VVS-VS)": {
-      "1.50-2.10": 0,
-      "2.20-2.60": 0,
-      "2.70-4.00": 0,
-      "Above-4.00": 0,
-    },
-    "True VS D-F(ex ex ex)": {
-      "1.50-2.10": 550,
-      "2.20-2.60": 580,
-      "2.70-4.00": 630,
-      "Above-4.00": 750,
-    },
-    "Si2-Si3 regular": {
-      "1.50-2.10": 300,
-      "2.20-2.60": 330,
-      "2.70-4.00": 400,
-      "Above-4.00": 450,
-    },
-    "Si1- FG": {
-      "1.50-2.10": 450,
-      "2.20-2.60": 480,
-      "2.70-4.00": 550,
-      "Above-4.00": 600,
-    },
-    "VVS D-F( top quality)": {
-      "1.50-2.10": 650,
-      "2.20-2.60": 680,
-      "2.70-4.00": 750,
-      "Above-4.00": 850,
-    },
-    Moissanite: {
-      "1.50-2.10": 0,
-      "2.20-2.60": 0,
-      "2.70-4.00": 0,
-      "Above-4.00": 0,
-    },
+    // "VS D-F": {
+    //   "1.50-2.10": 500,
+    //   "2.20-2.60": 530,
+    //   "2.70-4.00": 550,
+    //   "Above-4.00": 650,
+    // },
+    // "Lab grown (VVS-VS)": {
+    //   "1.50-2.10": 0,
+    //   "2.20-2.60": 0,
+    //   "2.70-4.00": 0,
+    //   "Above-4.00": 0,
+    // },
+    // "True VS D-F(ex ex ex)": {
+    //   "1.50-2.10": 550,
+    //   "2.20-2.60": 580,
+    //   "2.70-4.00": 630,
+    //   "Above-4.00": 750,
+    // },
+    // "Si2-Si3 regular": {
+    //   "1.50-2.10": 300,
+    //   "2.20-2.60": 330,
+    //   "2.70-4.00": 400,
+    //   "Above-4.00": 450,
+    // },
+    // "Si1- FG": {
+    //   "1.50-2.10": 450,
+    //   "2.20-2.60": 480,
+    //   "2.70-4.00": 550,
+    //   "Above-4.00": 600,
+    // },
+    // "VVS D-F( top quality)": {
+    //   "1.50-2.10": 650,
+    //   "2.20-2.60": 680,
+    //   "2.70-4.00": 750,
+    //   "Above-4.00": 850,
+    // },
+    // Moissanite: {
+    //   "1.50-2.10": 0,
+    //   "2.20-2.60": 0,
+    //   "2.70-4.00": 0,
+    //   "Above-4.00": 0,
+    // },
   };
 
   useEffect(() => {
@@ -247,11 +248,14 @@ const CreateQuotation = ({
         const silverMaterial = materials.find(
           (item) => item?.id === 3
         );
+        const platinumMaterial = materials.find(
+          (item) => item?.id === 4
+        );
 
-        setPurityToPercentMap(prev => ({ ...prev, Silver: parseFloat(silverMaterial?.price) || 100 }));
+        setPurityToPercentMap(prev => ({ ...prev, Silver: parseFloat(silverMaterial?.price) || 100, Platinum: parseFloat(platinumMaterial?.price) || 100 }));
 
         const rateRounds = diamondRateRounds["VS2 si1"];
-        const rateBaguttes = diamondRateBaguettes["VS2 si1"];
+        const rateBaguttes = diamondRateBaguettes["VS G-H Baggs"];
 
         setDetails({
           goldPrice:
@@ -262,7 +266,7 @@ const CreateQuotation = ({
           profitLabour: client?.profitAndLabourPercentage?.toFixed(2) || "0.00",
           purity: "43",
           diamondTypeRound: "VS2 si1",
-          diamondTypeBagutte: "VS2 si1",
+          diamondTypeBagutte: "VS G-H Baggs",
           roundsRange1: rateRounds["0.50-2.30"] || "0.00",
           roundsRange1_weight: calculatorData?.rounds?.["0.50-2.30"]?.totalWeight || "0.00",
           roundsRange2: rateRounds["2.40-2.75"] || "0.00",
@@ -289,6 +293,8 @@ const CreateQuotation = ({
       setDetails(quotationDetails);
       setShowValuesSection(true);
       setContentRows(quotationTable);
+      setDescription(quotationDescription || "");
+      console.log("Loaded description:", quotationDescription);
       return;
     }
     const fetchMaterials = async () => {
@@ -1089,10 +1095,6 @@ const CreateQuotation = ({
     });
   }
 
-  useEffect(() => {
-    console.log("Details updated:", details);
-  }, [details]);
-
   return (
     <Box className="bg-white h-full flex flex-col overflow-hidden">
       <div className="flex-shrink-0">
@@ -1337,7 +1339,7 @@ const CreateQuotation = ({
                         size="small"
                         InputProps={{
                           endAdornment: (
-                            <InputAdornment position="end">g</InputAdornment>
+                            <InputAdornment position="end">ctw</InputAdornment>
                           ),
                         }}
                       />
@@ -1425,7 +1427,7 @@ const CreateQuotation = ({
                         size="small"
                         InputProps={{
                           endAdornment: (
-                            <InputAdornment position="end">g</InputAdornment>
+                            <InputAdornment position="end">ctw</InputAdornment>
                           ),
                         }}
                       />
