@@ -56,6 +56,13 @@ const baguetteRanges = {
   "Above-4.00": "(Above 4.0mm) Natural Diamonds Baguette",
 };
 
+const currencyOptions = {
+  USD: { rate: 1, symbol: '$' },
+  INR: { rate: 83, symbol: 'Rs' },
+  GBP: { rate: 0.78, symbol: '£' },
+  AUD: { rate: 1.35, symbol: 'A$' },
+};
+
 const CreateQuotation = ({
   calculatorData,
   client,
@@ -84,6 +91,7 @@ const CreateQuotation = ({
   const [quotationNumber, setQuotationNumber] = useState("");
   const [description, setDescription] = useState("");
   const [descriptionError, setDescriptionError] = useState("");
+  const [selectedCurrency, setSelectedCurrency] = useState("USD");
   const [details, setDetails] = useState({
     goldPrice: "0.00",
     goldWastage: client?.goldWastagePercentage?.toFixed(2) || "0.00",
@@ -93,6 +101,7 @@ const CreateQuotation = ({
     purity: "43",
     diamondTypeRound: "VS2 si1",
     diamondTypeBagutte: "VS G-H Baggs",
+    selectedCurrency: "USD",
     roundsRange1: "10.00",
     roundsRange1_weight: "0.00",
     roundsRange2: "20.00",
@@ -385,6 +394,9 @@ const CreateQuotation = ({
       },
     };
     const computedRows = [];
+    const selectedCurrency = formValues?.selectedCurrency || 'USD';
+    const rate = currencyOptions[selectedCurrency].rate;
+    const symbol = currencyOptions[selectedCurrency].symbol;
 
     let currentGoldValue = 0;
 
@@ -394,8 +406,8 @@ const CreateQuotation = ({
         100) *
       formValues?.weight;
     computedRows.push([
-      `Current Pure Gold Price \t [ ($${(parseFloat(formValues?.goldPrice || 0) / 10)} x ${formValues?.weight}g) x ${formValues?.purity}% ] `,
-      currentGoldValue?.toFixed(2),
+      `Current Pure Gold Price \t [ (${symbol} ${(parseFloat(formValues?.goldPrice || 0) / 10) * rate} x ${formValues?.weight} g) x ${formValues?.purity} % ] `,
+      (currentGoldValue * rate)?.toFixed(2),
     ]);
 
     if (isEdit && isChild) {
@@ -407,10 +419,8 @@ const CreateQuotation = ({
     }
 
     computedRows.push([
-      `Gold Wastage \t [ ($${currentGoldValue?.toFixed(2)} x ${formValues?.goldWastage}%) / 100 ] `,
-      ((currentGoldValue?.toFixed(2) * formValues?.goldWastage) / 100)?.toFixed(
-        2
-      ),
+      `Gold Wastage \t [ (${symbol} ${currentGoldValue?.toFixed(2) * rate} x ${formValues?.goldWastage} %) / 100 ] `,
+      (((currentGoldValue?.toFixed(2) * formValues?.goldWastage) / 100) * rate)?.toFixed(2),
     ]);
 
     // Round CTWs
@@ -418,9 +428,9 @@ const CreateQuotation = ({
       // const weight = calculatorData?.rounds?.[key]?.totalWeight || 0;
       const weight = ndrRange?.round?.[key]?.weight || 0;
       const multiplier = ndrRange?.round?.[key]?.price || 0;
-      const res = (weight * multiplier)?.toFixed(2);
+      const res = ((weight * multiplier) * rate)?.toFixed(2);
       if (res > 0) {
-        label = `${label} \t ( ${formValues?.diamondTypeRound} ) [ ${weight}ctw x $${multiplier} ]`;
+        label = `${label} \t ( ${formValues?.diamondTypeRound} ) [ ${weight} ctw x ${symbol} ${multiplier * rate} ]`;
         computedRows.push([label, res]);
       }
     });
@@ -430,23 +440,24 @@ const CreateQuotation = ({
       // const weight = calculatorData?.baguettes?.[key]?.totalWeight || 0;
       const weight = ndrRange?.baguettes?.[key]?.weight || 0;
       const multiplier = ndrRange?.baguettes?.[key]?.price || 0;
-      const res = (weight * multiplier)?.toFixed(2);
+      const res = ((weight * multiplier) * rate)?.toFixed(2);
       if (res > 0) {
-        label = `${label} \t ( ${formValues?.diamondTypeBagutte} ) [ ${weight}ctw x $${multiplier} ]`;
+        label = `${label} \t ( ${formValues?.diamondTypeBagutte} ) [ ${weight} ctw x ${symbol} ${multiplier * rate} ]`;
         computedRows.push([label, res]);
       }
     });
 
     computedRows.push([
-      `Diamond Setting \t [ ${calculatorData?.totalGems} x $${formValues?.diamondSetting} ] `,
-      (calculatorData?.totalGems * formValues?.diamondSetting)?.toFixed(2),
+      `Diamond Setting \t [ ${calculatorData?.totalGems} x ${symbol} ${formValues?.diamondSetting * rate} ] `,
+      ((calculatorData?.totalGems * formValues?.diamondSetting) * rate)?.toFixed(2),
     ]);
-    computedRows.push([`Cad-Cam Wax`, client?.cadCamWaxPrice?.toFixed(2)]);
+    computedRows.push([`Cad-Cam Wax`, (client?.cadCamWaxPrice * rate)?.toFixed(2)]);
 
     setContentStarted(true);
     setShowValuesSection(true);
     setContentRows(computedRows);
     setDetails(formValues);
+    setSelectedCurrency(selectedCurrency);
   };
 
   useEffect(() => {
@@ -470,8 +481,11 @@ const CreateQuotation = ({
     profitAndLabour,
     total,
     generateForShipper,
-    quotationNumberParam = null
+    quotationNumberParam = null,
+    selectedCurrency = 'USD'
   ) => {
+    const rate = currencyOptions[selectedCurrency].rate;
+    const symbol = currencyOptions[selectedCurrency].symbol;
     const doc = new jsPDF();
 
     // Helper: Load logo as base64
@@ -681,15 +695,20 @@ const CreateQuotation = ({
 
     //Generic Details
     const genKeyLabelMap = {
-      goldPrice: "Gold Price ($)",
+      goldPrice: `Gold Price (${symbol})`,
       goldWastage: "Gold Wastage (%)",
       weight: "Weight (g)",
-      diamondSetting: "Diamond Setting ($)",
+      diamondSetting: `Diamond Setting (${symbol})`,
       profitLabour: "Profit & Labour (%)",
       purity: "Purity (%)",
     };
 
-    const genDetails = details || {};
+    const genDetails = { ...details };
+    Object.keys(genDetails).forEach((key) => {
+      if (["goldPrice", "diamondSetting"].includes(key)) {
+        genDetails[key] = Number(genDetails[key] || 0) * rate;
+      }
+    });
     const validKeys = Object.keys(genDetails).filter((key) =>
       Object.keys(genKeyLabelMap).includes(key)
     );
@@ -723,7 +742,7 @@ const CreateQuotation = ({
       head: [["PRODUCT", "AMOUNT"]],
       body: newcontentRows.map((row) => [
         String(row[0] || ""),
-        String("$ " + row[1] || ""),
+        String(currencyOptions[selectedCurrency].symbol + " " + row[1] || ""),
       ]),
       startY: currentY,
       styles: { fontSize: 9 }, // reduced font size
@@ -911,7 +930,9 @@ const CreateQuotation = ({
       subtotal,
       profitAndLabour,
       total,
-      generateForShipper
+      generateForShipper,
+      null,
+      selectedCurrency
     );
     doc.save(`${client?.clientName}_quotation_${Date.now()}.pdf`);
   };
@@ -923,7 +944,9 @@ const CreateQuotation = ({
       subtotal,
       profitAndLabour,
       total,
-      generateForShipper
+      generateForShipper,
+      null,
+      selectedCurrency
     );
     const pdfBlob = doc.output("blob");
     const reader = new FileReader();
@@ -954,7 +977,8 @@ const CreateQuotation = ({
         profitAndLabour,
         total,
         generateForShipper,
-        quotationId
+        quotationId,
+        selectedCurrency
       );
       const pdfBlob = doc.output("blob");
 
@@ -1255,6 +1279,23 @@ const CreateQuotation = ({
                           </MenuItem>
                         )
                       )}
+                    </TextField>
+                    <TextField
+                      select
+                      label="Currency"
+                      name="selectedCurrency"
+                      value={values?.selectedCurrency || "USD"}
+                      onChange={(e) =>
+                        setFieldValue("selectedCurrency", e?.target?.value)
+                      }
+                      sx={{ width: 180 }}
+                      size="small"
+                    >
+                      {Object.keys(currencyOptions).map((currency) => (
+                        <MenuItem key={currency} value={currency}>
+                          {currency} ({currencyOptions[currency].symbol})
+                        </MenuItem>
+                      ))}
                     </TextField>
                   </div>
                   <div
@@ -1628,7 +1669,7 @@ const CreateQuotation = ({
                           InputProps={{
                             startAdornment: (
                               <InputAdornment position="start">
-                                $
+                                {currencyOptions[selectedCurrency].symbol}
                               </InputAdornment>
                             ),
                           }}
@@ -1710,7 +1751,7 @@ const CreateQuotation = ({
                             readOnly: true,
                             startAdornment: (
                               <InputAdornment position="start">
-                                $
+                                {currencyOptions[selectedCurrency].symbol}
                               </InputAdornment>
                             ),
                           }}
