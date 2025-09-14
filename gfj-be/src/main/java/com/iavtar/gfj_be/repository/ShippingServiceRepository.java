@@ -20,6 +20,7 @@ public interface ShippingServiceRepository extends JpaRepository<ShippingTracker
             "(:shippingId IS NULL OR st.shippingId LIKE %:shippingId%) AND " +
             "(:trackingId IS NULL OR st.trackingId LIKE %:trackingId%) AND " +
             "(:invoiceNumber IS NULL OR st.invoiceNumber LIKE %:invoiceNumber%) AND " +
+            "(:trackingNote IS NULL OR st.trackingNote LIKE %:trackingNote%) AND " +
             "(:status IS NULL OR st.status LIKE %:status%) AND " +
             "(:createdAfter IS NULL OR st.createdAt >= :createdAfter) AND " +
             "(:createdBefore IS NULL OR st.createdAt <= :createdBefore) AND " +
@@ -28,6 +29,7 @@ public interface ShippingServiceRepository extends JpaRepository<ShippingTracker
     Page<ShippingTracker> searchShippingTrackers(@Param("shippingId") String shippingId,
                                                  @Param("trackingId") String trackingId,
                                                  @Param("invoiceNumber") String invoiceNumber,
+                                                 @Param("trackingNote") String trackingNote,
                                                  @Param("status") String status,
                                                  @Param("createdAfter") LocalDateTime createdAfter,
                                                  @Param("createdBefore") LocalDateTime createdBefore,

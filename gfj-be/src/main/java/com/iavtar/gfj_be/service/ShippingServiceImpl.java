@@ -193,31 +193,32 @@ public class ShippingServiceImpl implements ShippingService {
     @Override
     public PagedUserResponse<Map<String, Object>> searchShippingTrackers(ShippingSearchRequest searchRequest) {
         log.info("Searching shipping trackers with criteria: {}", searchRequest);
-        
+
         int page = searchRequest.getOffset() / searchRequest.getSize();
-        Sort.Direction direction = "desc".equalsIgnoreCase(searchRequest.getSortDirection()) 
-            ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Sort.Direction direction = "desc".equalsIgnoreCase(searchRequest.getSortDirection())
+                ? Sort.Direction.DESC : Sort.Direction.ASC;
         Sort sort = Sort.by(direction, searchRequest.getSortBy());
         Pageable pageable = PageRequest.of(page, searchRequest.getSize(), sort);
-        
+
         Page<ShippingTracker> shippingTrackerPage = shippingRepository.searchShippingTrackers(
-            searchRequest.getShippingId(),
-            searchRequest.getTrackingId(),
-            searchRequest.getInvoiceNumber(),
-            searchRequest.getStatus(),
-            searchRequest.getCreatedAfter(),
-            searchRequest.getCreatedBefore(),
-            searchRequest.getUpdatedAfter(),
-            searchRequest.getUpdatedBefore(),
-            pageable
+                searchRequest.getShippingId(),
+                searchRequest.getTrackingId(),
+                searchRequest.getInvoiceNumber(),
+                searchRequest.getTrackingNote(),
+                searchRequest.getStatus(),
+                searchRequest.getCreatedAfter(),
+                searchRequest.getCreatedBefore(),
+                searchRequest.getUpdatedAfter(),
+                searchRequest.getUpdatedBefore(),
+                pageable
         );
-        
+
         // Transform ShippingTracker entities to the same rich structure as getAllShipping
         List<Map<String, Object>> shippingGroups = shippingTrackerPage.getContent().stream()
                 .map(shippingTracker -> {
                     String shippingId = shippingTracker.getShippingId();
                     List<Quotation> quotations = quotationRepository.findAllByShippingId(shippingId);
-                    
+
                     Map<String, Object> item = new HashMap<>();
                     item.put("shippingId", shippingId);
                     item.put("quotations", quotations);
@@ -232,14 +233,14 @@ public class ShippingServiceImpl implements ShippingService {
                     return item;
                 })
                 .collect(Collectors.toList());
-        
+
         // Create a new Page with the transformed content
         Page<Map<String, Object>> transformedPage = new PageImpl<>(
-            shippingGroups, 
-            pageable, 
-            shippingTrackerPage.getTotalElements()
+                shippingGroups,
+                pageable,
+                shippingTrackerPage.getTotalElements()
         );
-        
+
         log.info("Found {} shipping trackers matching search criteria", shippingGroups.size());
         return PagedUserResponse.from(transformedPage, searchRequest.getOffset(), searchRequest.getSize());
     }
@@ -247,24 +248,24 @@ public class ShippingServiceImpl implements ShippingService {
     @Override
     public PagedUserResponse<Map<String, Object>> searchShippingTrackersByText(ShippingSearchRequest searchRequest) {
         log.info("Searching shipping trackers by text: {}", searchRequest.getSearchText());
-        
+
         int page = searchRequest.getOffset() / searchRequest.getSize();
-        Sort.Direction direction = "desc".equalsIgnoreCase(searchRequest.getSortDirection()) 
-            ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Sort.Direction direction = "desc".equalsIgnoreCase(searchRequest.getSortDirection())
+                ? Sort.Direction.DESC : Sort.Direction.ASC;
         Sort sort = Sort.by(direction, searchRequest.getSortBy());
         Pageable pageable = PageRequest.of(page, searchRequest.getSize(), sort);
-        
+
         Page<ShippingTracker> shippingTrackerPage = shippingRepository.searchShippingTrackersByText(
-            searchRequest.getSearchText(),
-            pageable
+                searchRequest.getSearchText(),
+                pageable
         );
-        
+
         // Transform ShippingTracker entities to the same rich structure as getAllShipping
         List<Map<String, Object>> shippingGroups = shippingTrackerPage.getContent().stream()
                 .map(shippingTracker -> {
                     String shippingId = shippingTracker.getShippingId();
                     List<Quotation> quotations = quotationRepository.findAllByShippingId(shippingId);
-                    
+
                     Map<String, Object> item = new HashMap<>();
                     item.put("shippingId", shippingId);
                     item.put("quotations", quotations);
@@ -277,14 +278,14 @@ public class ShippingServiceImpl implements ShippingService {
                     return item;
                 })
                 .collect(Collectors.toList());
-        
+
         // Create a new Page with the transformed content
         Page<Map<String, Object>> transformedPage = new PageImpl<>(
-            shippingGroups, 
-            pageable, 
-            shippingTrackerPage.getTotalElements()
+                shippingGroups,
+                pageable,
+                shippingTrackerPage.getTotalElements()
         );
-        
+
         log.info("Found {} shipping trackers matching text search criteria", shippingGroups.size());
         return PagedUserResponse.from(transformedPage, searchRequest.getOffset(), searchRequest.getSize());
     }
