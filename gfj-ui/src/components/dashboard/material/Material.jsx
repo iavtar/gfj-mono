@@ -300,8 +300,13 @@ const Material = () => {
                         }`}
                         sx={{ "&:hover": { backgroundColor: "#f9fafb" } }}
                       >
-                        <TableCell sx={{ borderBottom: "1px solid #f3f4f6" }}>
-                          {material.title}
+                        <TableCell sx={{ padding: "12px 16px" }}>
+                          <Typography
+                            variant="body2"
+                            className="font-semibold text-green-600"
+                          >
+                            {material.title}
+                          </Typography>
                         </TableCell>
                         <TableCell sx={{ padding: "12px 16px" }}>
                           <Typography
@@ -311,7 +316,7 @@ const Material = () => {
                             {material?.price?.toFixed(2) || "0.00"}
                           </Typography>
                         </TableCell>
-                        <TableCell sx={{ borderBottom: "1px solid #f3f4f6" }}>
+                        <TableCell>
                           <EditIcon
                             style={{ cursor: "pointer", marginRight: 8 }}
                             color="primary"
@@ -324,7 +329,7 @@ const Material = () => {
                               },
                             }}
                           />
-                          <DeleteIcon
+                          {/* <DeleteIcon
                             disabled={[1, 2, 3, 4].includes(material?.id)}
                             style={{ cursor: [1, 2, 3, 4].includes(material?.id) ? "not-allowed" : "pointer" }}
                             color={[1, 2, 3, 4].includes(material?.id) ? "disabled" : "error"}
@@ -340,7 +345,7 @@ const Material = () => {
                                 transition: [1, 2, 3, 4].includes(material?.id) ? "none" : "transform 0.2s ease-in-out",
                               },
                             }}
-                          />
+                          /> */}
                         </TableCell>
                       </TableRow>
                     ))}

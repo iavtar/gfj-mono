@@ -56,13 +56,6 @@ const baguetteRanges = {
   "Above-4.00": "(Above 4.0mm) Natural Diamonds Baguette",
 };
 
-const currencyOptions = {
-  USD: { rate: 1, symbol: '$' },
-  INR: { rate: 83, symbol: 'Rs' },
-  GBP: { rate: 0.78, symbol: '£' },
-  AUD: { rate: 1.35, symbol: 'A$' },
-};
-
 const CreateQuotation = ({
   calculatorData,
   client,
@@ -92,6 +85,12 @@ const CreateQuotation = ({
   const [description, setDescription] = useState("");
   const [descriptionError, setDescriptionError] = useState("");
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  const [currencyOptions, setCurrencyOptions] = useState({
+    USD: { rate: 1, symbol: "$" },
+    INR: { rate: 88.17, symbol: "Rs" },
+    GBP: { rate: 0.74, symbol: "£" },
+    AUD: { rate: 1.51, symbol: "A$" },
+  });
   const [details, setDetails] = useState({
     goldPrice: "0.00",
     goldWastage: client?.goldWastagePercentage?.toFixed(2) || "0.00",
@@ -260,8 +259,15 @@ const CreateQuotation = ({
         const platinumMaterial = materials.find(
           (item) => item?.id === 4
         );
+        const usdToGbp = materials.find(
+          (item) => item?.id === 5
+        );
+        const usdToAud = materials.find(
+          (item) => item?.id === 6
+        );
 
         setPurityToPercentMap(prev => ({ ...prev, Silver: parseFloat(silverMaterial?.price) || 100, Platinum: parseFloat(platinumMaterial?.price) || 100 }));
+        setCurrencyOptions(prev => ({ ...prev, INR: { rate: usdToInr?.price, symbol: "Rs" }, GBP: { rate: usdToGbp?.price, symbol: "£" }, AUD: { rate: usdToAud?.price, symbol: "A$" } }));
 
         const rateRounds = diamondRateRounds["VS2 si1"];
         const rateBaguttes = diamondRateBaguettes["VS G-H Baggs"];
