@@ -1,5 +1,6 @@
 package com.iavtar.gfj_be.controller;
 
+import com.iavtar.gfj_be.model.request.AddTrackingIdRequest;
 import com.iavtar.gfj_be.model.request.ShippingSearchRequest;
 import com.iavtar.gfj_be.model.request.UpdateShippingTrackingRequest;
 import com.iavtar.gfj_be.model.response.PagedUserResponse;
@@ -35,9 +36,8 @@ public class ShippingController {
     }
 
     @PostMapping("/addTrackingId")
-    public ResponseEntity<?> addTrackingId(@RequestParam String shippingId, 
-                                          @RequestParam String trackingId) {
-        return shippingService.addTrackingId(shippingId, trackingId);
+    public ResponseEntity<?> addTrackingId(@RequestBody AddTrackingIdRequest request) {
+        return shippingService.addTrackingId(request);
     }
 
     @PostMapping("/update")
@@ -79,6 +79,7 @@ public class ShippingController {
     public ResponseEntity<?> searchShippingTrackersWithParams(
             @RequestParam(required = false) String shippingId,
             @RequestParam(required = false) String trackingId,
+            @RequestParam(required = false) String invoiceNumber,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) LocalDateTime createdAfter,
             @RequestParam(required = false) LocalDateTime createdBefore,
@@ -93,6 +94,7 @@ public class ShippingController {
             ShippingSearchRequest searchRequest = ShippingSearchRequest.builder()
                     .shippingId(shippingId)
                     .trackingId(trackingId)
+                    .invoiceNumber(invoiceNumber)
                     .status(status)
                     .createdAfter(createdAfter)
                     .createdBefore(createdBefore)
