@@ -224,6 +224,8 @@ public class ShippingServiceImpl implements ShippingService {
                     item.put("count", quotations.size());
                     item.put("status", shippingTracker.getStatus());
                     item.put("trackingId", shippingTracker.getTrackingId() != null ? shippingTracker.getTrackingId() : "");
+                    item.put("invoiceNumber", shippingTracker.getInvoiceNumber() != null ? shippingTracker.getInvoiceNumber() : "");
+                    item.put("trackingNote", shippingTracker.getTrackingNote() != null ? shippingTracker.getTrackingNote() : "");
                     if (!quotations.isEmpty()) {
                         item.put("clientDetails", clientRepository.findById(quotations.get(0).getClientId()));
                     }
