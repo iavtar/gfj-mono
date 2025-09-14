@@ -325,7 +325,7 @@ const QuotationAdministration = () => {
     ));
   };
 
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(100);
   const fetchAllUsers = useCallback(async () => {
     try {
       const response = await apiClient.get(
@@ -435,7 +435,7 @@ const QuotationAdministration = () => {
   };
 
   const handleRowsPerPageChange = (event) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
+    const newRowsPerPage = parseInt(event.target.value, 100);
     setPageSize(newRowsPerPage);
     setPage(1);
   };

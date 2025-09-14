@@ -60,7 +60,7 @@ const ClientAdministration = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [dropdownUsers, setDropdownUsers] = useState({});
   const [selectedAgent, setSelectedAgent] = useState("all");
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(100);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchPayload, setSearchPayload] = useState({});
@@ -156,7 +156,7 @@ const ClientAdministration = () => {
   };
 
   const handleRowsPerPageChange = (event) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
+    const newRowsPerPage = parseInt(event.target.value, 100);
     setPageSize(newRowsPerPage);
     setPage(1); // Reset to first page when changing page size
     // The useEffect will trigger fetchUsers with the new pageSize

@@ -56,7 +56,7 @@ const Material = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(100);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [serachPayload, setSearchPayload] = useState({});
@@ -108,7 +108,7 @@ const Material = () => {
   };
 
   const handleRowsPerPageChange = (event) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
+    const newRowsPerPage = parseInt(event.target.value, 100);
     setPageSize(newRowsPerPage);
     setPage(1); // Reset to first page when changing page size
     // The useEffect will trigger fetchMaterials with the new pageSize

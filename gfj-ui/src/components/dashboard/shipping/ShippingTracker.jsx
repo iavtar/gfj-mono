@@ -91,7 +91,7 @@ const ShippingTracker = () => {
   const [trackingError, setTrackingError] = useState("");
   const [trackingNote, setTrackingNote] = useState("");
 
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(100);
 
   const fetchAllUsers = useCallback(async () => {
     try {
@@ -195,10 +195,9 @@ const ShippingTracker = () => {
   };
 
   const handleRowsPerPageChange = (event) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
-    // Note: In a real implementation, you'd want to update pageSize state
-    // and refetch data with the new pageSize. For now, this is a placeholder.
-    console.log("Rows per page changed to:", newRowsPerPage);
+    const newRowsPerPage = parseInt(event.target.value, 100);
+    setPageSize(newRowsPerPage);
+    setPage(1);
   };
 
   const handleAgentChange = (event) => {
@@ -339,6 +338,20 @@ const ShippingTracker = () => {
         trackingNote.trim()
       );
       handleTrackingDialogClose();
+    }
+  };
+
+  const handleStatusFilterChange = (event) => {
+    const selectedValue = event.target.value;
+    setStatusFilter(selectedValue);
+    setPage(1); // Reset to first page when changing status filter
+
+    // If status is "all", clear search payload to show all quotations
+    if (selectedValue === "all") {
+      setSearchPayload({});
+    } else {
+      // Create search payload with status filter
+      setSearchPayload({ quotationStatus: selectedValue });
     }
   };
 
@@ -581,7 +594,7 @@ const ShippingTracker = () => {
                 <FormControl fullWidth variant="outlined">
                   <Select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={handleStatusFilterChange}
                     displayEmpty
                     startAdornment={
                       <InputAdornment position="start">

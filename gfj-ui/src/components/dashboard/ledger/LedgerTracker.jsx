@@ -85,7 +85,7 @@ const LedgerTracker = () => {
   const [ledgerFormErrors, setLedgerFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(100);
 
   const fetchAllUsers = useCallback(async () => {
     try {
@@ -212,7 +212,7 @@ const LedgerTracker = () => {
   };
 
   const handleRowsPerPageChange = (event) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
+    const newRowsPerPage = parseInt(event.target.value, 100);
     setPageSize(newRowsPerPage);
     setPage(1); // Reset to first page when changing page size
     // The useEffect will trigger fetchLedgers with the new pageSize
