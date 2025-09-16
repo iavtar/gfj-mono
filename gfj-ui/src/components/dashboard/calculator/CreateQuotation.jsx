@@ -71,7 +71,20 @@ const CreateQuotation = ({
 }) => {
   const { id, token } = useSelector((state) => state.user.userDetails || {});
   const [contentRows, setContentRows] = useState([]);
+  const [computedRows, setComputedRows] = useState([]);
+  const [manualRows, setManualRows] = useState([]);
   const [contentStarted, setContentStarted] = useState(false);
+
+  const isComputedRow = (row) => {
+    const label = row[0];
+    if (label.startsWith("Current Pure Gold Price")) return true;
+    if (label.startsWith("Gold Wastage")) return true;
+    if (label.includes("Natural Diamonds Round")) return true;
+    if (label.includes("Natural Diamonds Baguette")) return true;
+    if (label.startsWith("Diamond Setting")) return true;
+    if (label === "Cad-Cam Wax") return true;
+    return false;
+  };
   const [showValuesSection, setShowValuesSection] = useState(false);
   const [openWarning, setOpenWarning] = useState(false);
   const [openClearAll, setOpenClearAll] = useState(false);
@@ -308,7 +321,11 @@ const CreateQuotation = ({
     if (isEdit) {
       setDetails(quotationDetails);
       setShowValuesSection(true);
-      setContentRows(quotationTable);
+      const computed = quotationTable.filter(isComputedRow);
+      const manual = quotationTable.filter(row => !isComputedRow(row));
+      setComputedRows(computed);
+      setManualRows(manual);
+      setContentRows([...computed, ...manual]);
       setDescription(quotationDescription || "");
       setSelectedCurrency(quotationDetails?.selectedCurrency || "USD");
       return;
@@ -325,28 +342,45 @@ const CreateQuotation = ({
     fetchMaterials();
   }, [token]);
 
-
-
   const addContentRow = () => {
     if (!contentStarted) setContentStarted(true);
     const newRow = ["", ""];
+    setManualRows([...manualRows, newRow]);
     setContentRows([...contentRows, newRow]);
   };
 
   const updateContentCell = (rowIndex, colIndex, value) => {
-    const updatedRows = [...contentRows];
-    updatedRows[rowIndex][colIndex] = value;
-    setContentRows(updatedRows);
+    if (rowIndex < computedRows.length) {
+      const updatedComputed = [...computedRows];
+      updatedComputed[rowIndex][colIndex] = value;
+      setComputedRows(updatedComputed);
+    } else {
+      const manualIndex = rowIndex - computedRows.length;
+      const updatedManual = [...manualRows];
+      updatedManual[manualIndex][colIndex] = value;
+      setManualRows(updatedManual);
+    }
+    setContentRows([...computedRows, ...manualRows]);
   };
 
   const deleteContentRow = (index) => {
-    const updatedRows = contentRows.filter((_, i) => i !== index);
-    setContentRows(updatedRows);
+    if (index < computedRows.length) {
+      const updatedComputed = computedRows.filter((_, i) => i !== index);
+      setComputedRows(updatedComputed);
+      setContentRows([...updatedComputed, ...manualRows]);
+    } else {
+      const manualIndex = index - computedRows.length;
+      const updatedManual = manualRows.filter((_, i) => i !== manualIndex);
+      setManualRows(updatedManual);
+      setContentRows([...computedRows, ...updatedManual]);
+    }
   };
 
   const clearAllEntries = () => {
     setContentRows([]);
     setContentStarted(false);
+    setComputedRows([]);
+    setManualRows([]);
   };
 
   const handleCloseValuesSection = () => {
@@ -356,8 +390,9 @@ const CreateQuotation = ({
   const handleWarningClose = (confirmed) => {
     setOpenWarning(false);
     if (confirmed) {
+      setManualRows([]);
+      setContentRows(computedRows);
       setShowValuesSection(false);
-      clearAllEntries();
     }
   };
 
@@ -401,9 +436,12 @@ const CreateQuotation = ({
       },
     };
     const computedRows = [];
-    const selectedCurrency = formValues?.selectedCurrency || 'USD';
-    const rate = currencyOptions[selectedCurrency].rate;
-    const symbol = currencyOptions[selectedCurrency].symbol;
+    const newCurrency = formValues?.selectedCurrency || 'USD';
+    const oldCurrency = selectedCurrency;
+    const oldRate = currencyOptions[oldCurrency].rate;
+    const newRate = currencyOptions[newCurrency].rate;
+    const rate = newRate;
+    const symbol = currencyOptions[newCurrency].symbol;
 
     let currentGoldValue = 0;
 
@@ -413,7 +451,7 @@ const CreateQuotation = ({
         100) *
       formValues?.weight;
     computedRows.push([
-      `Current Pure Gold Price \t [ (${symbol} ${(parseFloat(formValues?.goldPrice || 0) / 10) * rate} x ${formValues?.weight} g) x ${formValues?.purity} % ] `,
+      `Current Pure Gold Price \t [ (${symbol} ${((parseFloat(formValues?.goldPrice || 0) / 10) * rate).toFixed(3)} x ${formValues?.weight} g) x ${formValues?.purity} % ] `,
       (currentGoldValue * rate)?.toFixed(2),
     ]);
 
@@ -426,7 +464,7 @@ const CreateQuotation = ({
     }
 
     computedRows.push([
-      `Gold Wastage \t [ (${symbol} ${currentGoldValue?.toFixed(2) * rate} x ${formValues?.goldWastage} %) / 100 ] `,
+      `Gold Wastage \t [ (${symbol} ${(currentGoldValue * rate).toFixed(3)} x ${formValues?.goldWastage} %) / 100 ] `,
       (((currentGoldValue?.toFixed(2) * formValues?.goldWastage) / 100) * rate)?.toFixed(2),
     ]);
 
@@ -460,11 +498,13 @@ const CreateQuotation = ({
     ]);
     computedRows.push([`Cad-Cam Wax`, (client?.cadCamWaxPrice * rate)?.toFixed(2)]);
 
+    setComputedRows(computedRows);
+    const currentManualRows = contentRows.filter(row => !isComputedRow(row)).map(row => [row[0], (parseFloat(row[1]) / oldRate * newRate).toFixed(2)]);
+    setContentRows([...computedRows, ...currentManualRows]);
     setContentStarted(true);
     setShowValuesSection(true);
-    setContentRows(computedRows);
     setDetails(formValues);
-    setSelectedCurrency(selectedCurrency);
+    setSelectedCurrency(newCurrency);
   };
 
   useEffect(() => {
@@ -1908,7 +1948,7 @@ const CreateQuotation = ({
               <DialogTitle>Clear and Close Manage Entries?</DialogTitle>
               <DialogContent>
                 <DialogContentText>
-                  This will clear all entries and close the Manage Entries
+                  This will clear manually added entries and close the Manage Entries
                   section. Are you sure you want to proceed?
                 </DialogContentText>
               </DialogContent>
