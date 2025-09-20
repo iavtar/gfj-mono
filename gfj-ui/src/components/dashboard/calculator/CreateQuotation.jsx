@@ -1233,10 +1233,15 @@ const CreateQuotation = ({
                       type="number"
                       value={values?.goldWastage}
                       onChange={(e) => {
-                        let val = Math.max(
-                          1,
-                          Math.min(15, Number(e.target.value))
-                        );
+                        setFieldValue("goldWastage", e.target.value);
+                      }}
+                      onBlur={(e) => {
+                        let val = e.target.value;
+                        if (val === '' || isNaN(Number(val))) {
+                          val = '1';
+                        } else {
+                          val = Math.max(1, Math.min(15, Number(val))).toString();
+                        }
                         setFieldValue("goldWastage", val);
                       }}
                       inputProps={{ min: 1, max: 15, step: 0.01 }}
@@ -1349,182 +1354,294 @@ const CreateQuotation = ({
                       ))}
                     </TextField>
                   </div>
-                  <div
-                    style={{
+                  <Box
+                    sx={{
                       display: "flex",
-                      alignItems: "center",
-                      gap: 24,
-                      marginBottom: 24,
+                      flexDirection: { xs: "column", md: "row" },
+                      alignItems: { xs: "flex-start", md: "center" },
+                      gap: { xs: 2, md: 3 },
+                      marginBottom: 3,
                     }}
                   >
                     <Typography
                       variant="h7"
-                      className="text-[#4c257e] font-bold pb-5 w-[200px]"
+                      className="text-[#4c257e] font-bold pb-2 md:pb-5"
+                      sx={{ width: { xs: "100%", md: "150px" }, minWidth: { md: "150px" } }}
                     >
                       Rounds
                     </Typography>
 
-                    <FormControl sx={{ width: 350 }} size="small">
-                      <InputLabel id="diamond-type-label">
-                        Diamond Type
-                      </InputLabel>
-                      <Select
-                        label="Diamond Type"
-                        value={values?.diamondTypeRound}
-                        onChange={handleChangeRounds}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: { xs: "column", sm: "row" },
+                        alignItems: { xs: "flex-start", sm: "center" },
+                        gap: { xs: 2, sm: 3 },
+                        width: "100%",
+                      }}
+                    >
+                      <FormControl sx={{ width: { xs: "100%", sm: 350 } }} size="small">
+                        <InputLabel id="diamond-type-label">
+                          Diamond Type
+                        </InputLabel>
+                        <Select
+                          label="Diamond Type"
+                          value={values?.diamondTypeRound}
+                          onChange={handleChangeRounds}
+                        >
+                          {Object.keys(diamondRateRounds).map((type) => (
+                            <MenuItem key={type} value={type}>
+                              {type}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 2,
+                          width: "100%",
+                          marginTop: 5,
+                        }}
                       >
-                        {Object.keys(diamondRateRounds).map((type) => (
-                          <MenuItem key={type} value={type}>
-                            {type}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                          }}
+                        >
+                          <Typography
+                            variant="h7"
+                            className="text-[#4c257e] font-bold pb-2"
+                            sx={{ minWidth: "60px" }}
+                          >
+                            Price
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 2,
+                              flex: 1,
+                            }}
+                          >
+                            {roundFields.map((field) => (
+                              <TextField
+                                key={field.name}
+                                label={field.label}
+                                name={field.name}
+                                type="number"
+                                inputProps={{ min: 0, step: 0.01 }}
+                                value={values?.[field.name]}
+                                onChange={(e) =>
+                                  setFieldValue(field.name, e.target.value)
+                                }
+                                sx={{ width: { xs: "100%", sm: 180 } }}
+                                size="small"
+                                InputProps={{
+                                  startAdornment: (
+                                    <InputAdornment position="start">$</InputAdornment>
+                                  ),
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
 
-                    <Typography
-                      variant="h7"
-                      className="text-[#4c257e] font-bold pb-5"
-                    >
-                      Price
-                    </Typography>
-
-                    {roundFields.map((field) => (
-                      <TextField
-                        key={field.name}
-                        label={field.label}
-                        name={field.name}
-                        type="number"
-                        inputProps={{ min: 0, step: 0.01 }}
-                        value={values?.[field.name]}
-                        onChange={(e) =>
-                          setFieldValue(field.name, e.target.value)
-                        }
-                        sx={{ width: 180 }}
-                        size="small"
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">$</InputAdornment>
-                          ),
-                        }}
-                      />
-                    ))}
-
-                    <Typography
-                      variant="h7"
-                      className="text-[#4c257e] font-bold pb-5"
-                    >
-                      CTW
-                    </Typography>
-
-                    {roundFields.map((field) => (
-                      <TextField
-                        key={`${field.name}_weight`}
-                        label={field.label}
-                        name={field.name}
-                        type="number"
-                        inputProps={{ min: 0, step: 0.01 }}
-                        value={values?.[field.name + "_weight"]}
-                        onChange={(e) =>
-                          setFieldValue(field.name + "_weight", e.target.value)
-                        }
-                        sx={{ width: 180 }}
-                        size="small"
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment position="end">ctw</InputAdornment>
-                          ),
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <div
-                    style={{
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                          }}
+                        >
+                          <Typography
+                            variant="h7"
+                            className="text-[#4c257e] font-bold pb-2"
+                            sx={{ minWidth: "60px" }}
+                          >
+                            CTW
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 2,
+                              flex: 1,
+                            }}
+                          >
+                            {roundFields.map((field) => (
+                              <TextField
+                                key={`${field.name}_weight`}
+                                label={field.label}
+                                name={field.name}
+                                type="number"
+                                inputProps={{ min: 0, step: 0.01 }}
+                                value={values?.[field.name + "_weight"]}
+                                onChange={(e) =>
+                                  setFieldValue(field.name + "_weight", e.target.value)
+                                }
+                                sx={{ width: { xs: "100%", sm: 180 } }}
+                                size="small"
+                                InputProps={{
+                                  endAdornment: (
+                                    <InputAdornment position="end">ctw</InputAdornment>
+                                  ),
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+                  <Box
+                    sx={{
                       display: "flex",
-                      alignItems: "center",
-                      gap: 24,
-                      marginBottom: 24,
+                      flexDirection: { xs: "column", md: "row" },
+                      alignItems: { xs: "flex-start", md: "center" },
+                      gap: { xs: 2, md: 3 },
+                      marginBottom: 3,
                     }}
                   >
                     <Typography
                       variant="h7"
-                      className="text-[#4c257e] font-bold pb-5 w-[200px]"
+                      className="text-[#4c257e] font-bold pb-2 md:pb-5"
+                      sx={{ width: { xs: "100%", md: "150px" }, minWidth: { md: "150px" } }}
                     >
                       Baguettes
                     </Typography>
 
-                    <FormControl sx={{ width: 350 }} size="small">
-                      <InputLabel id="diamond-type-label">
-                        Diamond Type
-                      </InputLabel>
-                      <Select
-                        label="Diamond Type"
-                        value={values?.diamondTypeBagutte}
-                        onChange={handleChangeBaguettes}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: { xs: "column", sm: "row" },
+                        alignItems: { xs: "flex-start", sm: "center" },
+                        gap: { xs: 2, sm: 3 },
+                        width: "100%",
+                      }}
+                    >
+                      <FormControl sx={{ width: { xs: "100%", sm: 350 } }} size="small">
+                        <InputLabel id="diamond-type-label">
+                          Diamond Type
+                        </InputLabel>
+                        <Select
+                          label="Diamond Type"
+                          value={values?.diamondTypeBagutte}
+                          onChange={handleChangeBaguettes}
+                        >
+                          {Object.keys(diamondRateBaguettes).map((type) => (
+                            <MenuItem key={type} value={type}>
+                              {type}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 2,
+                          width: "100%",
+                          marginTop: 5,
+                        }}
                       >
-                        {Object.keys(diamondRateBaguettes).map((type) => (
-                          <MenuItem key={type} value={type}>
-                            {type}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                          }}
+                        >
+                          <Typography
+                            variant="h7"
+                            className="text-[#4c257e] font-bold pb-2"
+                            sx={{ minWidth: "60px" }}
+                          >
+                            Price
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 2,
+                              flex: 1,
+                            }}
+                          >
+                            {baguetteFields.map((field) => (
+                              <TextField
+                                key={field.name}
+                                label={field.label}
+                                name={field.name}
+                                type="number"
+                                inputProps={{ min: 0, step: 0.01 }}
+                                value={values?.[field.name]}
+                                onChange={(e) =>
+                                  setFieldValue(field.name, e.target.value)
+                                }
+                                sx={{ width: { xs: "100%", sm: 180 } }}
+                                size="small"
+                                InputProps={{
+                                  startAdornment: (
+                                    <InputAdornment position="start">$</InputAdornment>
+                                  ),
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
 
-                    <Typography
-                      variant="h7"
-                      className="text-[#4c257e] font-bold pb-5"
-                    >
-                      Price
-                    </Typography>
-
-                    {baguetteFields.map((field) => (
-                      <TextField
-                        key={field.name}
-                        label={field.label}
-                        name={field.name}
-                        type="number"
-                        inputProps={{ min: 0, step: 0.01 }}
-                        value={values?.[field.name]}
-                        onChange={(e) =>
-                          setFieldValue(field.name, e.target.value)
-                        }
-                        sx={{ width: 180 }}
-                        size="small"
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">$</InputAdornment>
-                          ),
-                        }}
-                      />
-                    ))}
-
-                    <Typography
-                      variant="h7"
-                      className="text-[#4c257e] font-bold pb-5"
-                    >
-                      CTW
-                    </Typography>
-
-                    {baguetteFields.map((field) => (
-                      <TextField
-                        key={`${field.name}_weight`}
-                        label={field.label}
-                        name={`${field.name}_weight`}
-                        type="number"
-                        inputProps={{ min: 0, step: 0.01 }}
-                        value={values?.[field.name + "_weight"]}
-                        onChange={(e) =>
-                          setFieldValue(field.name + "_weight", e.target.value)
-                        }
-                        sx={{ width: 180 }}
-                        size="small"
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment position="end">ctw</InputAdornment>
-                          ),
-                        }}
-                      />
-                    ))}
-                  </div>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                          }}
+                        >
+                          <Typography
+                            variant="h7"
+                            className="text-[#4c257e] font-bold pb-2"
+                            sx={{ minWidth: "60px" }}
+                          >
+                            CTW
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 2,
+                              flex: 1,
+                            }}
+                          >
+                            {baguetteFields.map((field) => (
+                              <TextField
+                                key={`${field.name}_weight`}
+                                label={field.label}
+                                name={`${field.name}_weight`}
+                                type="number"
+                                inputProps={{ min: 0, step: 0.01 }}
+                                value={values?.[field.name + "_weight"]}
+                                onChange={(e) =>
+                                  setFieldValue(field.name + "_weight", e.target.value)
+                                }
+                                sx={{ width: { xs: "100%", sm: 180 } }}
+                                size="small"
+                                InputProps={{
+                                  endAdornment: (
+                                    <InputAdornment position="end">ctw</InputAdornment>
+                                  ),
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
                   <div
                     style={{
                       flex: 1,
