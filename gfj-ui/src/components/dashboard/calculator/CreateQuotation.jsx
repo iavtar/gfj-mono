@@ -106,10 +106,10 @@ const CreateQuotation = ({
   });
   const [details, setDetails] = useState({
     goldPrice: "0.00",
-    goldWastage: client?.goldWastagePercentage?.toFixed(2) || "0.00",
+    goldWastage: client?.goldWastagePercentage || "0.00",
     weight: "0.00",
-    diamondSetting: client?.diamondSettingPrice?.toFixed(2) || "0.00",
-    profitLabour: client?.profitAndLabourPercentage?.toFixed(2) || "0.00",
+    diamondSetting: client?.diamondSettingPrice || "0.00",
+    profitLabour: client?.profitAndLabourPercentage || "0.00",
     purity: "43",
     diamondTypeRound: "VS2 si1",
     diamondTypeBagutte: "VS G-H Baggs",
@@ -287,11 +287,11 @@ const CreateQuotation = ({
 
         setDetails({
           goldPrice:
-            (goldMaterial?.price / usdToInr?.price)?.toFixed(2) || "0.00",
-          goldWastage: client?.goldWastagePercentage?.toFixed(2) || "0.00",
+            (goldMaterial?.price / usdToInr?.price) || "0.00",
+          goldWastage: client?.goldWastagePercentage || "0.00",
           weight: "15.00",
-          diamondSetting: client?.diamondSettingPrice?.toFixed(2) || "0.00",
-          profitLabour: client?.profitAndLabourPercentage?.toFixed(2) || "0.00",
+          diamondSetting: client?.diamondSettingPrice || "0.00",
+          profitLabour: client?.profitAndLabourPercentage || "0.00",
           purity: "43",
           selectedCurrency: quotationDetails?.selectedCurrency || "USD",
           diamondTypeRound: "VS2 si1",
@@ -452,7 +452,7 @@ const CreateQuotation = ({
       formValues?.weight;
     computedRows.push([
       `Current Pure Gold Price \t [ (${symbol} ${((parseFloat(formValues?.goldPrice || 0) / 10) * rate).toFixed(3)} x ${formValues?.weight} g) x ${formValues?.purity} % ] `,
-      (currentGoldValue * rate)?.toFixed(2),
+      (currentGoldValue * rate)?.toFixed(3),
     ]);
 
     if (isEdit && isChild) {
@@ -465,7 +465,7 @@ const CreateQuotation = ({
 
     computedRows.push([
       `Gold Wastage \t [ (${symbol} ${(currentGoldValue * rate).toFixed(3)} x ${formValues?.goldWastage} %) / 100 ] `,
-      (((currentGoldValue?.toFixed(2) * formValues?.goldWastage) / 100) * rate)?.toFixed(2),
+      (((currentGoldValue * formValues?.goldWastage) / 100) * rate)?.toFixed(3),
     ]);
 
     // Round CTWs
@@ -473,10 +473,10 @@ const CreateQuotation = ({
       // const weight = calculatorData?.rounds?.[key]?.totalWeight || 0;
       const weight = ndrRange?.round?.[key]?.weight || 0;
       const multiplier = ndrRange?.round?.[key]?.price || 0;
-      const res = ((weight * multiplier) * rate)?.toFixed(2);
+      const res = ((weight * multiplier) * rate);
       if (res > 0) {
         label = `${label} \t ( ${formValues?.diamondTypeRound} ) [ ${weight} ctw x ${symbol} ${multiplier * rate} ]`;
-        computedRows.push([label, res]);
+        computedRows.push([label, res?.toFixed(3)]);
       }
     });
 
@@ -485,21 +485,21 @@ const CreateQuotation = ({
       // const weight = calculatorData?.baguettes?.[key]?.totalWeight || 0;
       const weight = ndrRange?.baguettes?.[key]?.weight || 0;
       const multiplier = ndrRange?.baguettes?.[key]?.price || 0;
-      const res = ((weight * multiplier) * rate)?.toFixed(2);
+      const res = ((weight * multiplier) * rate);
       if (res > 0) {
         label = `${label} \t ( ${formValues?.diamondTypeBagutte} ) [ ${weight} ctw x ${symbol} ${multiplier * rate} ]`;
-        computedRows.push([label, res]);
+        computedRows.push([label, res?.toFixed(3)]);
       }
     });
 
     computedRows.push([
       `Diamond Setting \t [ ${calculatorData?.totalGems} x ${symbol} ${formValues?.diamondSetting * rate} ] `,
-      ((calculatorData?.totalGems * formValues?.diamondSetting) * rate)?.toFixed(2),
+      ((calculatorData?.totalGems * formValues?.diamondSetting) * rate)?.toFixed(3),
     ]);
-    computedRows.push([`Cad-Cam Wax`, (client?.cadCamWaxPrice * rate)?.toFixed(2)]);
+    computedRows.push([`Cad-Cam Wax`, (client?.cadCamWaxPrice * rate)?.toFixed(3)]);
 
     setComputedRows(computedRows);
-    const currentManualRows = contentRows.filter(row => !isComputedRow(row)).map(row => [row[0], (parseFloat(row[1]) / oldRate * newRate).toFixed(2)]);
+    const currentManualRows = contentRows.filter(row => !isComputedRow(row)).map(row => [row[0], (parseFloat(row[1]) / oldRate * newRate)]);
     setContentRows([...computedRows, ...currentManualRows]);
     setContentStarted(true);
     setShowValuesSection(true);
@@ -514,11 +514,11 @@ const CreateQuotation = ({
       return acc + (isNaN(value) ? 0 : value);
     }, 0);
 
-    setSubtotal(sum?.toFixed(2));
+    setSubtotal(sum?.toFixed(3));
     const profitLabour = sum * (details?.profitLabour / 100);
-    setProfitAndLabour(profitLabour?.toFixed(2));
-    setTotal((sum + profitLabour)?.toFixed(2));
-  }, [contentRows, details]);
+    setProfitAndLabour(profitLabour?.toFixed(3));
+    setTotal((sum + profitLabour)?.toFixed(3));
+  }, [contentRows]); // Removed details dependency to prevent override
 
   // Helper to generate the PDF and return the jsPDF instance
   const generateQuotationPDF = async (
@@ -1144,29 +1144,21 @@ const CreateQuotation = ({
     { label: "Total", value: total },
   ];
 
-  const handleChangeRounds = (event) => {
+  const handleChangeRounds = (event, setFieldValue) => {
     const selected = event.target.value;
-    setDetails((prev) => {
-      const updated = { ...prev };
-      updated.diamondTypeRound = selected;
-      const rates = diamondRateRounds[selected] || {};
-      roundFields.forEach((field) => {
-        updated[field.name] = rates?.[field.label] || "0.00";
-      });
-      return updated;
+    setFieldValue("diamondTypeRound", selected);
+    const rates = diamondRateRounds[selected] || {};
+    roundFields.forEach((field) => {
+      setFieldValue(field.name, rates?.[field.label] || "0.00");
     });
   }
 
-  const handleChangeBaguettes = (event) => {
+  const handleChangeBaguettes = (event, setFieldValue) => {
     const selected = event.target.value;
-    setDetails((prev) => {
-      const updated = { ...prev };
-      updated.diamondTypeBagutte = selected;
-      const rates = diamondRateBaguettes[selected] || {};
-      baguetteFields.forEach((field) => {
-        updated[field.name] = rates?.[field.label] || "0.00";
-      });
-      return updated;
+    setFieldValue("diamondTypeBagutte", selected);
+    const rates = diamondRateBaguettes[selected] || {};
+    baguetteFields.forEach((field) => {
+      setFieldValue(field.name, rates?.[field.label] || "0.00");
     });
   }
 
@@ -1387,7 +1379,7 @@ const CreateQuotation = ({
                         <Select
                           label="Diamond Type"
                           value={values?.diamondTypeRound}
-                          onChange={handleChangeRounds}
+                          onChange={(e) => handleChangeRounds(e, setFieldValue)}
                         >
                           {Object.keys(diamondRateRounds).map((type) => (
                             <MenuItem key={type} value={type}>
@@ -1531,7 +1523,7 @@ const CreateQuotation = ({
                         <Select
                           label="Diamond Type"
                           value={values?.diamondTypeBagutte}
-                          onChange={handleChangeBaguettes}
+                          onChange={(e) => handleChangeBaguettes(e, setFieldValue)}
                         >
                           {Object.keys(diamondRateBaguettes).map((type) => (
                             <MenuItem key={type} value={type}>
@@ -1915,8 +1907,32 @@ const CreateQuotation = ({
                         <TextField
                           value={item?.value}
                           type="number"
+                          inputProps={{ min: 0, step: 0.01 }}
+                          onChange={(e) => {
+                            const newValue = parseFloat(e.target.value);
+                            if (item.label === "Sub Total") {
+                              setSubtotal(newValue);
+                              const newProfitAndLabour = (newValue * (details.profitLabour / 100));
+                              setProfitAndLabour(newProfitAndLabour);
+                              const newTotal = (newValue + parseFloat(newProfitAndLabour));
+                              setTotal(newTotal?.toFixed(3));
+                            } else if (item.label === "Profit and Labour") {
+                              setProfitAndLabour(newValue);
+                              const newTotal = (parseFloat(subtotal) + newValue);
+                              setTotal(newTotal?.toFixed(3));
+                              // Update the Generic Details profitLabour percentage
+                              const newPercentage = subtotal > 0 ? (newValue * 100) / subtotal : 0;
+                              setDetails(prev => ({ ...prev, profitLabour: newPercentage }));
+                            } else if (item.label === "Total") {
+                              setTotal(newValue?.toFixed(3));
+                              const newProfitAndLabour = (newValue - parseFloat(subtotal));
+                              setProfitAndLabour(newProfitAndLabour);
+                              // Update the Generic Details profitLabour percentage
+                              const newPercentage = subtotal > 0 ? (newProfitAndLabour * 100) / subtotal : 0;
+                              setDetails(prev => ({ ...prev, profitLabour: newPercentage }));
+                            }
+                          }}
                           InputProps={{
-                            readOnly: true,
                             startAdornment: (
                               <InputAdornment position="start">
                                 {currencyOptions[selectedCurrency].symbol}
