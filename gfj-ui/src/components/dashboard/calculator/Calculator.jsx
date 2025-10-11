@@ -45,6 +45,7 @@ const validationSchema = Yup.object({
 
 const Calculator = () => {
   const { token, roles, id } = useSelector((state) => state.user.userDetails || {});
+  const isMobile = useSelector((state) => state.user.isMobile);
   const [file, setFile] = useState(null);
   const [data, setData] = useState(null);
   const dropdownCache = useRef(null);
@@ -179,7 +180,7 @@ const Calculator = () => {
           <Button
             variant="contained"
             onClick={handleBack}
-            className={`w-[48px] h-[48px] !rounded-lg flex items-center justify-center !absolute !top-[25px] !left-[19px] !z-10 !bg-[var(--brand-purple)]
+            className={`w-[48px] h-[48px] !rounded-lg flex items-center justify-center !absolute !top-[26px] !left-[19px] !z-10 !bg-[var(--brand-purple)]
               font-semibold hover:!bg-[var(--brand-dark-purple)] transition-all cursor-pointer`}
             sx={{
               boxShadow: "none",
@@ -192,12 +193,18 @@ const Calculator = () => {
           >
             <BackIcon />
           </Button>
-          {data != null && (
-            <CreateQuotation
-              calculatorData={data}
-              client={mergedClientData}
-            />
-          )}
+          {data !== null &&
+            (isMobile ? (
+              <CreateQuotationMob
+                calculatorData={data}
+                client={mergedClientData}
+              />
+            ) : (
+              <CreateQuotation
+                calculatorData={data}
+                client={mergedClientData}
+              />
+            ))}
         </Box>
       </Fade>
 
