@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { rehydrateUser } from "./features/user/userSlice"; // Import the rehydration action
+import { rehydrateUser, setIsMobile } from "./features/user/userSlice"; // Import the rehydration action
 // import { CircularProgress } from "@mui/material";
 import DynamicDashboard from "./components/DynamicDashboard";
 import PrivateRoute from "./routes/PrivateRoute";
@@ -21,6 +21,15 @@ function App() {
   // Rehydrate user state from localStorage on app initialization
   useEffect(() => {
     dispatch(rehydrateUser());
+  }, [dispatch]);
+
+  // Handle window resize to set isMobile
+  useEffect(() => {
+    const checkMobile = () => dispatch(setIsMobile(window.innerWidth <= 768));
+    checkMobile();
+    const handleResize = () => checkMobile();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [dispatch]);
 
   // Get the last visited dashboard page

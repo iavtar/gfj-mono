@@ -1,0 +1,2190 @@
+import React, { use, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import {
+  Box,
+  Button,
+  IconButton,
+  TextField,
+  Typography,
+  Fade,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  InputAdornment,
+  MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Menu,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+} from "@mui/material";
+import { Add, Delete, Close, ArrowDropDown } from "@mui/icons-material";
+import { toast } from "react-toastify";
+import { FaWhatsapp } from "react-icons/fa";
+
+import jsPDF from "jspdf";
+import dayjs from "dayjs";
+import "jspdf-autotable";
+import { Formik, Form, Field } from "formik";
+import { useRef } from "react";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
+import HeaderCard from "../../HeaderCard";
+import apiClient from "../../../app/axiosConfig";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+
+
+const roundRanges = {
+  "0.50-2.30": "(0.5-2.3mm) Natural Diamonds Round",
+  "2.40-2.75": "(2.3-2.7mm) Natural Diamonds Round",
+  "2.80-3.30": "(2.7-3.3mm) Natural Diamonds Round",
+  "Above-3.30": "(Above 3.3mm) Natural Diamonds Round",
+};
+
+const baguetteRanges = {
+  "1.50-2.10": "(1.5-2.1mm) Natural Diamonds Baguette",
+  "2.20-2.60": "(2.2-2.6mm) Natural Diamonds Baguette",
+  "2.70-4.00": "(2.7-4.0mm) Natural Diamonds Baguette",
+  "Above-4.00": "(Above 4.0mm) Natural Diamonds Baguette",
+};
+
+const CreateQuotation = ({
+  calculatorData,
+  client,
+  isEdit,
+  quotationDetails,
+  quotationTable,
+  quotationId,
+  quotationDescription,
+  parentContentRows,
+  parentTotalsSection,
+  parentQuotationDetails,
+  isChild,
+}) => {
+  const { id, token } = useSelector((state) => state.user.userDetails || {});
+  const [contentRows, setContentRows] = useState([]);
+  const [computedRows, setComputedRows] = useState([]);
+  const [manualRows, setManualRows] = useState([]);
+  const [contentStarted, setContentStarted] = useState(false);
+
+  const isComputedRow = (row) => {
+    const label = row[0];
+    if (label.startsWith("Current Pure Gold Price")) return true;
+    if (label.startsWith("Gold Wastage")) return true;
+    if (label.includes("Natural Diamonds Round")) return true;
+    if (label.includes("Natural Diamonds Baguette")) return true;
+    if (label.startsWith("Diamond Setting")) return true;
+    if (label === "Cad-Cam Wax") return true;
+    return false;
+  };
+  const [showValuesSection, setShowValuesSection] = useState(false);
+  const [openWarning, setOpenWarning] = useState(false);
+  const [openClearAll, setOpenClearAll] = useState(false);
+  const [profitAndLabour, setProfitAndLabour] = useState();
+  const [subtotal, setSubtotal] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSave, setShowSave] = useState(true);
+  const [imageUrl, setImageUrl] = useState();
+  const [quotationNumber, setQuotationNumber] = useState("");
+  const [description, setDescription] = useState("");
+  const [descriptionError, setDescriptionError] = useState("");
+  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  const [currencyOptions, setCurrencyOptions] = useState({
+    USD: { rate: 1, symbol: "$" },
+    INR: { rate: 88.17, symbol: "Rs" },
+    GBP: { rate: 0.74, symbol: "£" },
+    AUD: { rate: 1.51, symbol: "A$" },
+  });
+  const [details, setDetails] = useState({
+    goldPrice: "0.00",
+    goldWastage: client?.goldWastagePercentage || "0.00",
+    weight: "0.00",
+    diamondSetting: client?.diamondSettingPrice || "0.00",
+    profitLabour: client?.profitAndLabourPercentage || "0.00",
+    purity: "43",
+    diamondTypeRound: "VS2 si1",
+    diamondTypeBagutte: "VS G-H Baggs",
+    selectedCurrency: "USD",
+    roundsRange1: "10.00",
+    roundsRange1_weight: "0.00",
+    roundsRange2: "20.00",
+    roundsRange2_weight: "0.00",
+    roundsRange3: "20.00",
+    roundsRange3_weight: "0.00",
+    roundsRange4: "20.00",
+    roundsRange4_weight: "0.00",
+    baguettesRange1: "50.00",
+    baguettesRange1_weight: "0.00",
+    baguettesRange2: "50.00",
+    baguettesRange2_weight: "0.00",
+    baguettesRange3: "50.00",
+    baguettesRange3_weight: "0.00",
+    baguettesRange4: "50.00",
+    baguettesRange4_weight: "0.00",
+  });
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [materials, setMaterials] = useState([]);
+  const [purityToPercentMap, setPurityToPercentMap] = useState({
+    22: 92,
+    18: 75.5,
+    14: 59,
+    10: 43,
+    9: 38.5,
+    Silver: 100,
+  });
+  const exportRef = useRef();
+  
+  const diamondRateRounds = {
+    "VS2 si1": {
+      "0.50-2.30": 350,
+      "2.40-2.75": 380,
+      "2.80-3.30": 450,
+      "Above-3.30": 550,
+    },
+    "VS G-H": {
+      "0.50-2.30": 400,
+      "2.40-2.75": 430,
+      "2.80-3.30": 500,
+      "Above-3.30": 600,
+    },
+    "VS D-F": {
+      "0.50-2.30": 500,
+      "2.40-2.75": 530,
+      "2.80-3.30": 550,
+      "Above-3.30": 650,
+    },
+    "Lab grown (VVS-VS)": {
+      "0.50-2.30": 0,
+      "2.40-2.75": 0,
+      "2.80-3.30": 0,
+      "Above-3.30": 0,
+    },
+    "True VS D-F(ex ex ex)": {
+      "0.50-2.30": 550,
+      "2.40-2.75": 580,
+      "2.80-3.30": 630,
+      "Above-3.30": 750,
+    },
+    "Si2-Si3 regular": {
+      "0.50-2.30": 300,
+      "2.40-2.75": 330,
+      "2.80-3.30": 400,
+      "Above-3.30": 450,
+    },
+    "Si1- FG": {
+      "0.50-2.30": 450,
+      "2.40-2.75": 480,
+      "2.80-3.30": 550,
+      "Above-3.30": 600,
+    },
+    "VVS D-F( top quality)": {
+      "0.50-2.30": 650,
+      "2.40-2.75": 680,
+      "2.80-3.30": 750,
+      "Above-3.30": 850,
+    },
+    Moissanite: {
+      "0.50-2.30": 0,
+      "2.40-2.75": 0,
+      "2.80-3.30": 0,
+      "Above-3.30": 0,
+    },
+  };
+
+  const diamondRateBaguettes = {
+    // "VS2 si1": {
+    //   "1.50-2.10": 350,
+    //   "2.20-2.60": 380,
+    //   "2.70-4.00": 450,
+    //   "Above-4.00": 550,
+    // },
+    "VS G-H Baggs": {
+      "1.50-2.10": 400,
+      "2.20-2.60": 430,
+      "2.70-4.00": 500,
+      "Above-4.00": 600,
+    },
+    // "VS D-F": {
+    //   "1.50-2.10": 500,
+    //   "2.20-2.60": 530,
+    //   "2.70-4.00": 550,
+    //   "Above-4.00": 650,
+    // },
+    // "Lab grown (VVS-VS)": {
+    //   "1.50-2.10": 0,
+    //   "2.20-2.60": 0,
+    //   "2.70-4.00": 0,
+    //   "Above-4.00": 0,
+    // },
+    // "True VS D-F(ex ex ex)": {
+    //   "1.50-2.10": 550,
+    //   "2.20-2.60": 580,
+    //   "2.70-4.00": 630,
+    //   "Above-4.00": 750,
+    // },
+    // "Si2-Si3 regular": {
+    //   "1.50-2.10": 300,
+    //   "2.20-2.60": 330,
+    //   "2.70-4.00": 400,
+    //   "Above-4.00": 450,
+    // },
+    // "Si1- FG": {
+    //   "1.50-2.10": 450,
+    //   "2.20-2.60": 480,
+    //   "2.70-4.00": 550,
+    //   "Above-4.00": 600,
+    // },
+    // "VVS D-F( top quality)": {
+    //   "1.50-2.10": 650,
+    //   "2.20-2.60": 680,
+    //   "2.70-4.00": 750,
+    //   "Above-4.00": 850,
+    // },
+    // Moissanite: {
+    //   "1.50-2.10": 0,
+    //   "2.20-2.60": 0,
+    //   "2.70-4.00": 0,
+    //   "Above-4.00": 0,
+    // },
+  };
+
+  useEffect(() => {
+    if (!isEdit) {
+      if (materials?.length > 0 && client) {
+        const goldMaterial = materials.find(
+          (item) => item?.id === 1
+        );
+        const usdToInr = materials.find(
+          (item) => item?.id === 2
+        );
+        const silverMaterial = materials.find(
+          (item) => item?.id === 3
+        );
+        const platinumMaterial = materials.find(
+          (item) => item?.id === 4
+        );
+        const usdToGbp = materials.find(
+          (item) => item?.id === 5
+        );
+        const usdToAud = materials.find(
+          (item) => item?.id === 6
+        );
+
+        setPurityToPercentMap(prev => ({ ...prev, Silver: parseFloat(silverMaterial?.price) || 100, Platinum: parseFloat(platinumMaterial?.price) || 100 }));
+        setCurrencyOptions(prev => ({ ...prev, INR: { rate: usdToInr?.price, symbol: "Rs" }, GBP: { rate: usdToGbp?.price, symbol: "£" }, AUD: { rate: usdToAud?.price, symbol: "A$" } }));
+
+        const rateRounds = diamondRateRounds["VS2 si1"];
+        const rateBaguttes = diamondRateBaguettes["VS G-H Baggs"];
+
+        setDetails({
+          goldPrice:
+            (goldMaterial?.price / usdToInr?.price) || "0.00",
+          goldWastage: client?.goldWastagePercentage || "0.00",
+          weight: "15.00",
+          diamondSetting: client?.diamondSettingPrice || "0.00",
+          profitLabour: client?.profitAndLabourPercentage || "0.00",
+          purity: "43",
+          selectedCurrency: quotationDetails?.selectedCurrency || "USD",
+          diamondTypeRound: "VS2 si1",
+          diamondTypeBagutte: "VS G-H Baggs",
+          roundsRange1: rateRounds["0.50-2.30"] || "0.00",
+          roundsRange1_weight: calculatorData?.rounds?.["0.50-2.30"]?.totalWeight || "0.00",
+          roundsRange2: rateRounds["2.40-2.75"] || "0.00",
+          roundsRange2_weight: calculatorData?.rounds?.["2.40-2.75"]?.totalWeight || "0.00",
+          roundsRange3: rateRounds["2.80-3.30"] || "0.00",
+          roundsRange3_weight: calculatorData?.rounds?.["2.80-3.30"]?.totalWeight || "0.00",
+          roundsRange4: rateRounds["Above-3.30"] || "0.00",
+          roundsRange4_weight: calculatorData?.rounds?.["Above-3.30"]?.totalWeight || "0.00",
+          baguettesRange1: rateBaguttes["1.50-2.10"] || "0.00",
+          baguettesRange1_weight: calculatorData?.baguettes?.["1.50-2.10"]?.totalWeight || "0.00",
+          baguettesRange2: rateBaguttes["2.20-2.60"] || "0.00",
+          baguettesRange2_weight: calculatorData?.baguettes?.["2.20-2.60"]?.totalWeight || "0.00",
+          baguettesRange3: rateBaguttes["2.70-4.00"] || "0.00",
+          baguettesRange3_weight: calculatorData?.baguettes?.["2.70-4.00"]?.totalWeight || "0.00",
+          baguettesRange4: rateBaguttes["Above-4.00"] || "0.00",
+          baguettesRange4_weight: calculatorData?.baguettes?.["Above-4.00"]?.totalWeight || "0.00",
+        });
+      }
+    }
+  }, [materials, client, isEdit]);
+
+  useEffect(() => {
+    if (isEdit) {
+      setDetails(quotationDetails);
+      setShowValuesSection(true);
+      const computed = quotationTable.filter(isComputedRow);
+      const manual = quotationTable.filter(row => !isComputedRow(row));
+      setComputedRows(computed);
+      setManualRows(manual);
+      setContentRows([...computed, ...manual]);
+      setDescription(quotationDescription || "");
+      setSelectedCurrency(quotationDetails?.selectedCurrency || "USD");
+      return;
+    }
+    const fetchMaterials = async () => {
+      try {
+        const response = await apiClient.get("/businessAdmin/materials");
+        setMaterials(response?.data);
+      } catch (error) {
+        console.error("Error fetching materials:", error);
+      }
+    };
+
+    fetchMaterials();
+  }, [token]);
+
+  const addContentRow = () => {
+    if (!contentStarted) setContentStarted(true);
+    const newRow = ["", ""];
+    setManualRows([...manualRows, newRow]);
+    setContentRows([...contentRows, newRow]);
+  };
+
+  const updateContentCell = (rowIndex, colIndex, value) => {
+    if (rowIndex < computedRows.length) {
+      const updatedComputed = [...computedRows];
+      updatedComputed[rowIndex][colIndex] = value;
+      setComputedRows(updatedComputed);
+    } else {
+      const manualIndex = rowIndex - computedRows.length;
+      const updatedManual = [...manualRows];
+      updatedManual[manualIndex][colIndex] = value;
+      setManualRows(updatedManual);
+    }
+    setContentRows([...computedRows, ...manualRows]);
+  };
+
+  const deleteContentRow = (index) => {
+    if (index < computedRows.length) {
+      const updatedComputed = computedRows.filter((_, i) => i !== index);
+      setComputedRows(updatedComputed);
+      setContentRows([...updatedComputed, ...manualRows]);
+    } else {
+      const manualIndex = index - computedRows.length;
+      const updatedManual = manualRows.filter((_, i) => i !== manualIndex);
+      setManualRows(updatedManual);
+      setContentRows([...computedRows, ...updatedManual]);
+    }
+  };
+
+  const clearAllEntries = () => {
+    setContentRows([]);
+    setContentStarted(false);
+    setComputedRows([]);
+    setManualRows([]);
+  };
+
+  const handleCloseValuesSection = () => {
+    setOpenWarning(true);
+  };
+
+  const handleWarningClose = (confirmed) => {
+    setOpenWarning(false);
+    if (confirmed) {
+      setManualRows([]);
+      setContentRows(computedRows);
+      setShowValuesSection(false);
+    }
+  };
+
+  const handleStartAddingEntries = (formValues) => {
+    const ndrRange = {
+      round: {
+        "0.50-2.30": {
+          price: formValues?.roundsRange1 || 1,
+          weight: formValues?.roundsRange1_weight || 1,
+        },
+        "2.40-2.75": {
+          price: formValues?.roundsRange2 || 1,
+          weight: formValues?.roundsRange2_weight || 1,
+        },
+        "2.80-3.30": {
+          price: formValues?.roundsRange3 || 1,
+          weight: formValues?.roundsRange3_weight || 1,
+        },
+        "Above-3.30": {
+          price: formValues?.roundsRange4 || 1,
+          weight: formValues?.roundsRange4_weight || 1,
+        },
+      },
+      baguettes: {
+        "1.50-2.10": {
+          price: formValues?.baguettesRange1 || 1,
+          weight: formValues?.baguettesRange1_weight || 1,
+        },
+        "2.20-2.60": {
+          price: formValues?.baguettesRange2 || 1,
+          weight: formValues?.baguettesRange2_weight || 1,
+        },
+        "2.70-4.00": {
+          price: formValues?.baguettesRange3 || 1,
+          weight: formValues?.baguettesRange3_weight || 1,
+        },
+        "Above-4.00": {
+          price: formValues?.baguettesRange4 || 1,
+          weight: formValues?.baguettesRange4_weight || 1,
+        },
+      },
+    };
+    const computedRows = [];
+    const newCurrency = formValues?.selectedCurrency || 'USD';
+    const oldCurrency = selectedCurrency;
+    const oldRate = currencyOptions[oldCurrency].rate;
+    const newRate = currencyOptions[newCurrency].rate;
+    const rate = newRate;
+    const symbol = currencyOptions[newCurrency].symbol;
+
+    let currentGoldValue = 0;
+
+    currentGoldValue =
+      (((parseFloat(formValues?.goldPrice || 0) / 10) *
+        (formValues?.purity || 0)) /
+        100) *
+      formValues?.weight;
+    computedRows.push([
+      `Current Pure Gold Price \t [ (${symbol} ${((parseFloat(formValues?.goldPrice || 0) / 10) * rate).toFixed(3)} x ${formValues?.weight} g) x ${formValues?.purity} % ] `,
+      (currentGoldValue * rate)?.toFixed(3),
+    ]);
+
+    if (isEdit && isChild) {
+      currentGoldValue =
+        (((parseFloat(parentQuotationDetails?.goldPrice || 0) / 10) *
+          (parentQuotationDetails?.purity || 0)) /
+          100) *
+        parentQuotationDetails?.weight;
+    }
+
+    computedRows.push([
+      `Gold Wastage \t [ (${symbol} ${(currentGoldValue * rate).toFixed(3)} x ${formValues?.goldWastage} %) / 100 ] `,
+      (((currentGoldValue * formValues?.goldWastage) / 100) * rate)?.toFixed(3),
+    ]);
+
+    // Round CTWs
+    Object.entries(roundRanges).forEach(([key, label]) => {
+      // const weight = calculatorData?.rounds?.[key]?.totalWeight || 0;
+      const weight = ndrRange?.round?.[key]?.weight || 0;
+      const multiplier = ndrRange?.round?.[key]?.price || 0;
+      const res = ((weight * multiplier) * rate);
+      if (res > 0) {
+        label = `${label} \t ( ${formValues?.diamondTypeRound} ) [ ${weight} ctw x ${symbol} ${multiplier * rate} ]`;
+        computedRows.push([label, res?.toFixed(3)]);
+      }
+    });
+
+    // Baguette CTWs
+    Object.entries(baguetteRanges).forEach(([key, label]) => {
+      // const weight = calculatorData?.baguettes?.[key]?.totalWeight || 0;
+      const weight = ndrRange?.baguettes?.[key]?.weight || 0;
+      const multiplier = ndrRange?.baguettes?.[key]?.price || 0;
+      const res = ((weight * multiplier) * rate);
+      if (res > 0) {
+        label = `${label} \t ( ${formValues?.diamondTypeBagutte} ) [ ${weight} ctw x ${symbol} ${multiplier * rate} ]`;
+        computedRows.push([label, res?.toFixed(3)]);
+      }
+    });
+
+    computedRows.push([
+      `Diamond Setting \t [ ${calculatorData?.totalGems} x ${symbol} ${formValues?.diamondSetting * rate} ] `,
+      ((calculatorData?.totalGems * formValues?.diamondSetting) * rate)?.toFixed(3),
+    ]);
+    computedRows.push([`Cad-Cam Wax`, (client?.cadCamWaxPrice * rate)?.toFixed(3)]);
+
+    setComputedRows(computedRows);
+    const currentManualRows = contentRows.filter(row => !isComputedRow(row)).map(row => [row[0], (parseFloat(row[1]) / oldRate * newRate)]);
+    setContentRows([...computedRows, ...currentManualRows]);
+    setContentStarted(true);
+    setShowValuesSection(true);
+    setDetails(formValues);
+    setSelectedCurrency(newCurrency);
+  };
+
+  useEffect(() => {
+    const sum = contentRows?.reduce((acc, row) => {
+      if (row[0] === "Profit & Labour" || row[0] === "Total") return acc;
+      const value = parseFloat(row[1]);
+      return acc + (isNaN(value) ? 0 : value);
+    }, 0);
+
+    setSubtotal(sum?.toFixed(3));
+    const profitLabour = sum * (details?.profitLabour / 100);
+    setProfitAndLabour(profitLabour?.toFixed(3));
+    setTotal((sum + profitLabour)?.toFixed(3));
+  }, [contentRows]); // Removed details dependency to prevent override
+
+  // Helper to generate the PDF and return the jsPDF instance
+  const generateQuotationPDF = async (
+    details,
+    contentRows,
+    subtotal,
+    profitAndLabour,
+    total,
+    generateForShipper,
+    quotationNumberParam = null,
+    selectedCurrency = 'USD'
+  ) => {
+    const rate = currencyOptions[selectedCurrency].rate;
+    const symbol = currencyOptions[selectedCurrency].symbol;
+    const doc = new jsPDF();
+
+    // Helper: Load logo as base64
+    const getBase64FromImageUrl = (url) =>
+      new Promise((resolve, reject) => {
+        const img = new window.Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          const base64String = canvas.toDataURL("image/png");
+          resolve(base64String);
+        };
+        img.onerror = reject;
+        img.src = url;
+      });
+
+    // Try loading logo
+    let logoBase64 = "";
+    try {
+      logoBase64 = await getBase64FromImageUrl("/src/assets/gfj.png");
+      if (!logoBase64)
+        logoBase64 = await getBase64FromImageUrl("/assets/gfj.png");
+    } catch {
+      //
+    }
+
+    // Add logo (reduced size)
+    if (logoBase64) {
+      doc.addImage(logoBase64, "PNG", 14, 8, 18, 18);
+    }
+
+    // Title (reduced size)
+    doc.setFontSize(18);
+    doc.setFont(undefined, "bold");
+    doc.text("QUOTATION", 190, 18, { align: "right" });
+
+    // Client + Quotation Details
+    doc.setFontSize(10);
+    doc.setFont(undefined, "normal");
+
+    // Quotation Info Section (compact)
+    const formattedDate = dayjs().format("DD-MM-YYYY");
+    const quoteInfo = [
+      ["DATE", formattedDate],
+      ["QUOTE", quotationNumberParam || quotationNumber],
+    ];
+    const quoteX = 134;
+    const quoteY = 25; // moved up more
+    quoteInfo.forEach(([label, value], i) => {
+      doc.text(label, quoteX, quoteY + i * 5); // reduced spacing
+      doc.text(value, quoteX + 25, quoteY + i * 5);
+    });
+
+    // Client Section as Table
+    const clientY = 35; // moved up
+    const clientKeyLabelMap = {
+      clientName: "Client Name",
+      businessAddress: "Business Address",
+      city: "City",
+      state: "State",
+      country: "Country",
+      zipCode: "Zip Code",
+      phoneNumber: "Phone Number",
+      email: "Email",
+    };
+
+    const clientDetails = client || {};
+    const validClientKeys = Object.keys(clientDetails).filter((key) =>
+      Object.keys(clientKeyLabelMap).includes(key)
+    );
+
+    const clientHeaders = [
+      validClientKeys.map((key) => clientKeyLabelMap[key]),
+    ];
+    const clientBody = [
+      validClientKeys.map(
+        (key) => clientDetails[key] || `##${key.toUpperCase()}`
+      ),
+    ];
+
+    doc.autoTable({
+      head: clientHeaders,
+      body: clientBody,
+      startY: clientY,
+      styles: { fontSize: 8, halign: "center" }, // reduced font size
+      headStyles: { fillColor: [105, 41, 117] },
+      margin: { left: 14, right: 14 },
+      tableWidth: 182,
+    });
+
+    // Calculate client section end position using table height
+    const clientSectionEnd = doc.lastAutoTable.finalY + 2; // reduced gap
+
+    /*
+    const diamondData = [
+      ["Diamond Types", "VS2 si1", "VS G-H", "VS D-F", "Lab grown (VVS-VS)", "True VS D-F", "Si2-Si3 regular", "Si1- FG", "VVS D-F (top quality)", "Moissanite"],
+      ["Price/ct", "$350/ct", "$400/ct", "$500/ct", "Custom", "$550/ct", "$300/ct", "$450/ct", "$650/ct", "Custom"],
+    ];
+
+    doc.autoTable({
+      body: diamondData,
+      startY: clientSectionEnd, // add extra gap below client section
+      styles: { fontSize: 8, halign: "center" },
+      bodyStyles: { valign: "middle" },
+      columnStyles: {
+        0: { fillColor: [105, 41, 117], textColor: 255, fontStyle: "bold" }, // first column purple
+      },
+      margin: { left: 14, right: 14 },
+      tableWidth: 182,
+    });
+    */
+
+    // update descY so description starts after diamond section
+    // const diamondSectionEnd = doc.lastAutoTable.finalY + 2; // (Uncomment if diamond section should be shown)
+    const diamondSectionEnd = clientSectionEnd;
+
+    // DESCRIPTION SECTION (side by side layout)
+    const descY = diamondSectionEnd;
+
+    // Description title (purple background)
+    doc.setFillColor(105, 41, 117); // #692975
+    doc.setTextColor(255, 255, 255);
+    doc.rect(14, descY, 40, 6, "F"); // smaller height
+    doc.text("DESCRIPTION", 16, descY + 4);
+
+    // Description content (gray background)
+    doc.setFillColor(240, 240, 240); // subtle gray
+    doc.setTextColor(0, 0, 0);
+
+    const maxWidth = 142; // remaining width after title
+    let descEndY = descY + 6; // start after header bar
+    if (description && description.trim()) {
+      const lineHeight = 5; // reduced spacing
+      const descContentLines = description.split("\n");
+
+      descContentLines.forEach((line, i) => {
+        // Check if line needs to be wrapped
+        if (doc.getTextWidth(line) > maxWidth) {
+          // Simple text wrapping - split by words
+          const words = line.split(" ");
+          let currentLine = "";
+          let lineCount = 0;
+
+          words.forEach((word) => {
+            const testLine = currentLine + (currentLine ? " " : "") + word;
+            if (doc.getTextWidth(testLine) <= maxWidth) {
+              currentLine = testLine;
+            } else {
+              if (currentLine) {
+                doc.rect(
+                  54,
+                  descY + lineCount * lineHeight,
+                  maxWidth,
+                  lineHeight,
+                  "F"
+                );
+                doc.text(currentLine, 56, descY + 4 + lineCount * lineHeight);
+                lineCount++;
+                currentLine = word;
+              } else {
+                // Single word too long, truncate
+                doc.rect(
+                  54,
+                  descY + lineCount * lineHeight,
+                  maxWidth,
+                  lineHeight,
+                  "F"
+                );
+                doc.text(
+                  word.substring(0, 20) + "...",
+                  56,
+                  descY + 4 + lineCount * lineHeight
+                );
+                lineCount++;
+              }
+            }
+          });
+
+          if (currentLine) {
+            doc.rect(
+              54,
+              descY + lineCount * lineHeight,
+              maxWidth,
+              lineHeight,
+              "F"
+            );
+            doc.text(currentLine, 56, descY + 4 + lineCount * lineHeight);
+            lineCount++;
+          }
+
+          descEndY = descY + lineCount * lineHeight;
+        } else {
+          doc.rect(54, descY + i * lineHeight, maxWidth, lineHeight, "F");
+          doc.text(line, 56, descY + 4 + i * lineHeight);
+          descEndY = descY + (i + 1) * lineHeight;
+        }
+      });
+    } else {
+      // No description, just show empty gray area
+      doc.rect(54, descY, maxWidth, 6, "F");
+      descEndY = descY + 6;
+    }
+
+    //Generic Details
+    const genKeyLabelMap = {
+      goldPrice: `Gold Price (${symbol})`,
+      goldWastage: "Gold Wastage (%)",
+      weight: "Weight (g)",
+      diamondSetting: `Diamond Setting (${symbol})`,
+      profitLabour: "Profit & Labour (%)",
+      purity: "Purity (%)",
+    };
+
+    const genDetails = { ...details };
+    Object.keys(genDetails).forEach((key) => {
+      if (["goldPrice", "diamondSetting"].includes(key)) {
+        genDetails[key] = Number(genDetails[key] || 0) * rate;
+      }
+    });
+    const validKeys = Object.keys(genDetails).filter((key) =>
+      Object.keys(genKeyLabelMap).includes(key)
+    );
+
+    const genHeaders = [validKeys.map((key) => genKeyLabelMap[key])];
+    const genBody = [validKeys.map((key) => genDetails[key])];
+
+    doc.autoTable({
+      head: genHeaders,
+      body: genBody,
+      startY: descEndY + 2, // reduced gap
+      styles: { fontSize: 8, halign: "center" }, // reduced font size
+      headStyles: { fillColor: [105, 41, 117] },
+      margin: { left: 14, right: 14 },
+      tableWidth: 182,
+    });
+
+    // ✅ Use lastAutoTable.finalY as anchor
+    let currentY = doc.lastAutoTable.finalY + 2; // reduced gap
+
+    // --- PRODUCT TABLE (child) ---
+    let newcontentRows = contentRows || [];
+
+    const newTotals = [
+      [`Subtotal`, subtotal],
+      [`Profit & Labour \t [ ${details?.profitLabour}% ]`, profitAndLabour],
+      [`TOTAL`, total],
+    ];
+    newcontentRows = newcontentRows.concat(newTotals);
+    doc.autoTable({
+      head: [["PRODUCT", "AMOUNT"]],
+      body: newcontentRows.map((row) => [
+        String(row[0] || ""),
+        String(currencyOptions[selectedCurrency].symbol + " " + row[1] || ""),
+      ]),
+      startY: currentY,
+      styles: { fontSize: 9 }, // reduced font size
+      headStyles: { fillColor: [105, 41, 117] },
+      columnStyles: {
+        0: { cellWidth: 145 },
+        1: { cellWidth: 37, halign: "left" },
+      },
+      margin: { left: 14, right: 14 },
+      tableWidth: 182,
+    });
+
+    currentY = doc.lastAutoTable.finalY + 3; // reduced gap
+
+    // --- ORIGINAL QUOTATION (parent) ---
+    if (isEdit && isChild && !generateForShipper) {
+      doc.setFillColor(105, 41, 117); // purple
+      doc.setTextColor(255, 255, 255);
+      doc.rect(14, currentY, 182, 7, "F");
+      doc.text("PROPOSED QUOTATION", 16, currentY + 5);
+      doc.setTextColor(0, 0, 0);
+
+      // parent generic details
+      const genParentDetails = parentQuotationDetails || {};
+      const validParentKeys = Object.keys(genParentDetails).filter((key) =>
+        Object.keys(genKeyLabelMap).includes(key)
+      );
+
+      doc.autoTable({
+        head: [validParentKeys.map((key) => genKeyLabelMap[key])],
+        body: [validParentKeys.map((key) => genParentDetails[key])],
+        startY: currentY + 8, // reduced gap
+        styles: { fontSize: 8, halign: "center" }, // reduced font size
+        headStyles: { fillColor: [105, 41, 117] },
+        margin: { left: 14, right: 14 },
+        tableWidth: 182,
+      });
+
+      currentY = doc.lastAutoTable.finalY + 2; // reduced gap
+
+      // parent product table
+      const newParentContentRows = parentContentRows || [];
+      const newParentTotals = [
+        ["Subtotal", parentTotalsSection?.subtotal],
+        [
+          `Profit & Labour \t [ ${parentQuotationDetails?.profitLabour}% ]`,
+          parentTotalsSection?.profitAndLabour,
+        ],
+        ["TOTAL", parentTotalsSection?.total],
+      ];
+      newParentContentRows.push(...newParentTotals);
+      doc.autoTable({
+        head: [["PRODUCT", "AMOUNT"]],
+        body: newParentContentRows.map((row) => [
+          String(row[0] || ""),
+          String("$ " + row[1] || ""),
+        ]),
+        startY: currentY,
+        styles: { fontSize: 9 }, // reduced font size
+        headStyles: { fillColor: [105, 41, 117] },
+        columnStyles: {
+          0: { cellWidth: 145 },
+          1: { cellWidth: 37, halign: "left" },
+        },
+        margin: { left: 14, right: 14 },
+        tableWidth: 182,
+      });
+
+      currentY = doc.lastAutoTable.finalY + 6; // reduced gap
+    }
+
+    // Contact section (compact, one line)
+    doc.setFont(undefined, "italic");
+    doc.setFontSize(9); // smaller font
+    doc.text(
+      `Contact Us: Email: ${client?.agentEmail || "admin@gemsfromjaipur.com"} | Phone: ${client?.agentPhoneNumber || "+91-9828882226"}`,
+      14,
+      currentY + 8
+    );
+
+    // Thank you message (separate line)
+    doc.setFont(undefined, "bolditalic");
+    doc.text("Thank You For Your Business!", 14, currentY + 15);
+    return doc;
+  };
+
+  const handleSaveQuotation = async () => {
+    // Validate description field
+    if (!description || description.trim() === "") {
+      setDescriptionError("Description is required");
+      toast.error("Please enter a quotation description");
+      return;
+    }
+
+    // Clear any previous error
+    setDescriptionError("");
+
+    setIsSaving(true);
+    try {
+      const data = {
+        quotationTable: contentRows,
+        quotationDetails: details,
+        client: client,
+        description: description,
+        // contentRows: contentRows,
+        calculatorData: calculatorData,
+        totalsSection: { subtotal, profitAndLabour, total },
+      };
+
+      let requestBody = {
+        data: JSON.stringify(data),
+        price: total,
+        agentId: id,
+        clientId: client?.id,
+        quotationStatus: "new",
+        description: description,
+      };
+
+      let response;
+      if (isEdit) {
+        const { quotationStatus, ...rest } = requestBody;
+        requestBody = {
+          ...rest,
+        };
+        if (isChild) {
+          requestBody.finalQuotationId = quotationId;
+          response = await apiClient.post(
+            `/agent/updateFinalQuotation`,
+            requestBody,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+        } else {
+          requestBody.quotationId = quotationId;
+          response = await apiClient.post(
+            `/agent/updateQuotation`,
+            requestBody,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+        }
+      } else {
+        response = await apiClient.post(`/agent/createQuotation`, requestBody, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+      if (response?.status === 200) {
+        if (isChild) {
+          setQuotationNumber(quotationId);
+          uploadImage(quotationId, false);
+          uploadImage(quotationId, true);
+          toast.success(`Quotation Saved Successfully!`);
+        } else {
+          const newQuotationNumber = response?.data?.quotationId || quotationId;
+          setQuotationNumber(newQuotationNumber);
+          uploadImage(newQuotationNumber);
+          toast.success(`Quotation Saved Successfully!`);
+        }
+      } else {
+        toast.error("Error While Saving Quotation!");
+      }
+    } catch (error) {
+      console.error("Error Saving Quotation", error);
+      toast.error("Error While Saving Quotation!");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const downloadPDF = async (generateForShipper) => {
+    const doc = await generateQuotationPDF(
+      details,
+      contentRows,
+      subtotal,
+      profitAndLabour,
+      total,
+      generateForShipper,
+      null,
+      selectedCurrency
+    );
+    doc.save(`${client?.clientName}_quotation_${Date.now()}.pdf`);
+  };
+
+  const downloadImage = async (generateForShipper) => {
+    const doc = await generateQuotationPDF(
+      details,
+      contentRows,
+      subtotal,
+      profitAndLabour,
+      total,
+      generateForShipper,
+      null,
+      selectedCurrency
+    );
+    const pdfBlob = doc.output("blob");
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+      const typedarray = new Uint8Array(e.target.result);
+      const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      await page.render({ canvasContext: context, viewport: viewport }).promise;
+      const link = document.createElement("a");
+      link.download = `${client?.clientName}_quotation_${Date.now()}.jpeg`;
+      link.href = canvas.toDataURL("image/jpeg");
+      link.click();
+    };
+    reader.readAsArrayBuffer(pdfBlob);
+  };
+
+  const uploadImage = async (quotationId, generateForShipper) => {
+    try {
+      const doc = await generateQuotationPDF(
+        details,
+        contentRows,
+        subtotal,
+        profitAndLabour,
+        total,
+        generateForShipper,
+        quotationId,
+        selectedCurrency
+      );
+      const pdfBlob = doc.output("blob");
+
+      const reader = new FileReader();
+
+      reader.onload = async function (e) {
+        const typedarray = new Uint8Array(e.target.result);
+        const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 2 });
+
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({ canvasContext: context, viewport }).promise;
+
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            console.error("Failed to convert canvas to blob.");
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append(
+            "file",
+            blob,
+            `${client?.clientName}_quotation_${Date.now()}.jpeg`
+          );
+
+          try {
+            let response;
+            if (isChild) {
+              let urlString = `/agent/finalQuotation/upload?quotationId=${quotationId}`;
+              if (generateForShipper) {
+                urlString += "&forShipper=true";
+              }
+              response = await apiClient.post(
+                urlString,
+                formData,
+                {
+                  headers: {
+                    "Content-Type": "multipart/form-data",
+                  },
+                }
+              );
+            } else {
+              response = await apiClient.post(
+                `/agent/quotation/upload?quotationId=${quotationId}`,
+                formData,
+                {
+                  headers: {
+                    "Content-Type": "multipart/form-data",
+                  },
+                }
+              );
+            }
+
+            if (response?.status === 200) {
+              setImageUrl(response?.data);
+            } else {
+              toast.error("Failed to upload quotation image.");
+              throw new Error("Upload failed");
+            }
+          } catch (uploadError) {
+            console.error("Image upload failed:", uploadError);
+            toast.error("Failed to upload image.");
+          }
+        }, "image/jpeg");
+      };
+
+      reader.readAsArrayBuffer(pdfBlob);
+      setShowSave(false);
+    } catch (err) {
+      console.error("Error generating or uploading image:", err);
+    }
+  };
+
+  const sendImageToWhatsApp = async () => {
+    try {
+      if (!imageUrl) {
+        toast.error(
+          "Please save the quotation first to generate the image URL."
+        );
+        return;
+      }
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
+        `Here's your quotation: ${imageUrl}`
+      )}`;
+      window.open(whatsappUrl, "_blank");
+      toast.success("WhatsApp link opened!");
+    } catch (error) {
+      console.error("Error opening WhatsApp:", error);
+      toast.error("Failed to open WhatsApp link.");
+    }
+  };
+
+  const baguetteFields = [
+    { label: "1.50-2.10", name: "baguettesRange1" },
+    { label: "2.20-2.60", name: "baguettesRange2" },
+    { label: "2.70-4.00", name: "baguettesRange3" },
+    { label: "Above-4.00", name: "baguettesRange4" },
+  ];
+
+  const roundFields = [
+    { label: "0.50-2.30", name: "roundsRange1" },
+    { label: "2.80-3.30", name: "roundsRange2" },
+    { label: "2.40-2.75", name: "roundsRange3" },
+    { label: "Above-3.30", name: "roundsRange4" },
+  ];
+
+  const totals = [
+    { label: "Sub Total", value: subtotal },
+    { label: "Profit and Labour", value: profitAndLabour },
+    { label: "Total", value: total },
+  ];
+
+  const handleChangeRounds = (event, setFieldValue) => {
+    const selected = event.target.value;
+    setFieldValue("diamondTypeRound", selected);
+    const rates = diamondRateRounds[selected] || {};
+    roundFields.forEach((field) => {
+      setFieldValue(field.name, rates?.[field.label] || "0.00");
+    });
+  }
+
+  const handleChangeBaguettes = (event, setFieldValue) => {
+    const selected = event.target.value;
+    setFieldValue("diamondTypeBagutte", selected);
+    const rates = diamondRateBaguettes[selected] || {};
+    baguetteFields.forEach((field) => {
+      setFieldValue(field.name, rates?.[field.label] || "0.00");
+    });
+  }
+
+  return (
+    <Box className="bg-white h-full flex flex-col overflow-hidden">
+      <div className="flex-shrink-0">
+        <HeaderCard
+          icon="📒"
+          title={`${isEdit ? "Edit" : "Create"} Quotation`}
+        />
+      </div>
+
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 pb-6">
+        {/* Details Section */}
+        <Fade in={true} timeout={300}>
+          <Box className="mb-5 p-6 bg-white rounded shadow-md">
+            <Typography variant="h5" className="text-[#4c257e] font-bold pb-10">
+              Configure Quotation
+            </Typography>
+            <Formik
+              initialValues={details}
+              onSubmit={(values) => {
+                setDetails(values);
+              }}
+              enableReinitialize
+            >
+              {({ values, setFieldValue }) => (
+                <Form>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      gap: 16,
+                      marginBottom: 24,
+                    }}
+                  >
+                    <Typography
+                      variant="h7"
+                      className="text-[#4c257e] font-bold pb-5 w-full md:w-[150px]"
+                    >
+                      Generic Details
+                    </Typography>
+                    <TextField
+                      label="Current Gold Price"
+                      name="goldPrice"
+                      type="number"
+                      inputProps={{ min: 0, step: 0.01 }}
+                      value={values?.goldPrice}
+                      onChange={(e) =>
+                        setFieldValue("goldPrice", e.target.value)
+                      }
+                      sx={{ width: { xs: "47%", sm: 180 } }}
+                      size="small"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">$</InputAdornment>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      label="Gold Wastage"
+                      name="goldWastage"
+                      type="number"
+                      value={values?.goldWastage}
+                      onChange={(e) => {
+                        setFieldValue("goldWastage", e.target.value);
+                      }}
+                      onBlur={(e) => {
+                        let val = e.target.value;
+                        if (val === '' || isNaN(Number(val))) {
+                          val = '1';
+                        } else {
+                          val = Math.max(1, Math.min(15, Number(val))).toString();
+                        }
+                        setFieldValue("goldWastage", val);
+                      }}
+                      inputProps={{ min: 1, max: 15, step: 0.01 }}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">%</InputAdornment>
+                        ),
+                      }}
+                      sx={{ width: { xs: "47%", sm: 180 } }}
+                      size="small"
+                    />
+                    <TextField
+                      label="Weight"
+                      name="weight"
+                      type="number"
+                      inputProps={{ min: 0, step: 0.01 }}
+                      value={values?.weight}
+                      onChange={(e) => setFieldValue("weight", e.target.value)}
+                      sx={{ width: { xs: "47%", sm: 180 } }}
+                      size="small"
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">g</InputAdornment>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      label="Diamond Setting (Per Stone)"
+                      name="diamondSetting"
+                      type="number"
+                      inputProps={{ min: 0, step: 0.01 }}
+                      value={values?.diamondSetting}
+                      onChange={(e) =>
+                        setFieldValue("diamondSetting", e.target.value)
+                      }
+                      sx={{ width: { xs: "47%", sm: 180 } }}
+                      size="small"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">$</InputAdornment>
+                        ),
+                      }}
+                      InputLabelProps={{
+                        sx: {
+                          fontSize: "0.9rem",
+                        },
+                      }}
+                    />
+                    <TextField
+                      label="Profit & Labour"
+                      name="profitLabour"
+                      type="number"
+                      inputProps={{ min: 0, step: 0.01 }}
+                      value={values?.profitLabour}
+                      onChange={(e) =>
+                        setFieldValue("profitLabour", e.target.value)
+                      }
+                      sx={{ width: { xs: "47%", sm: 150 } }}
+                      size="small"
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">%</InputAdornment>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      select
+                      label="Purity"
+                      name="purity"
+                      value={values?.purity}
+                      onChange={(e) =>
+                        setFieldValue("purity", e?.target?.value)
+                      }
+                      sx={{ width: { xs: "47%", sm: 180 } }}
+                      size="small"
+                      SelectProps={{
+                        IconComponent: () => null, // Hide the default dropdown icon
+                      }}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end" sx={{ gap: 0.5 }}>
+                            <ArrowDropDown sx={{ pointerEvents: "none" }} />K
+                          </InputAdornment>
+                        ),
+                      }}
+                    >
+                      {Object.entries(purityToPercentMap).map(
+                        ([label, value]) => (
+                          <MenuItem key={label} value={value}>
+                            {label}
+                          </MenuItem>
+                        )
+                      )}
+                    </TextField>
+                    <TextField
+                      select
+                      label="Currency"
+                      name="selectedCurrency"
+                      value={values?.selectedCurrency || "USD"}
+                      onChange={(e) =>
+                        setFieldValue("selectedCurrency", e?.target?.value)
+                      }
+                      sx={{ width: { xs: "47%", sm: 180 } }}
+                      size="small"
+                    >
+                      {Object.keys(currencyOptions).map((currency) => (
+                        <MenuItem key={currency} value={currency}>
+                          {currency} ({currencyOptions[currency].symbol})
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </div>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: { xs: "column", md: "row" },
+                      alignItems: { xs: "flex-start", md: "center" },
+                      gap: { xs: 2, md: 3 },
+                      marginBottom: 3,
+                    }}
+                  >
+                    <Typography
+                      variant="h7"
+                      className="text-[#4c257e] font-bold pb-2 md:pb-5"
+                      sx={{ width: { xs: "100%", md: "150px" }, minWidth: { md: "150px" } }}
+                    >
+                      Rounds
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: { xs: "column", sm: "row" },
+                        alignItems: { xs: "flex-start", sm: "center" },
+                        gap: { xs: 2, sm: 3 },
+                        width: "100%",
+                      }}
+                    >
+                      <FormControl sx={{ width: { xs: "100%", sm: 350 } }} size="small">
+                        <InputLabel id="diamond-type-label">
+                          Diamond Type
+                        </InputLabel>
+                        <Select
+                          label="Diamond Type"
+                          value={values?.diamondTypeRound}
+                          onChange={(e) => handleChangeRounds(e, setFieldValue)}
+                        >
+                          {Object.keys(diamondRateRounds).map((type) => (
+                            <MenuItem key={type} value={type}>
+                              {type}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 6,
+                          width: "100%",
+                          marginTop: 5,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            // alignItems: "center",
+                            gap: 2,
+                          }}
+                        >
+                          <Typography
+                            variant="h7"
+                            className="text-[#4c257e] font-bold pb-2"
+                            sx={{ minWidth: "60px" }}
+                          >
+                            Price
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 2,
+                              flex: 1,
+                            }}
+                          >
+                            {roundFields.map((field) => (
+                              <TextField
+                                key={field.name}
+                                label={field.label}
+                                name={field.name}
+                                type="number"
+                                inputProps={{ min: 0, step: 0.01 }}
+                                value={values?.[field.name]}
+                                onChange={(e) =>
+                                  setFieldValue(field.name, e.target.value)
+                                }
+                                sx={{ width: { xs: "100%", sm: 180 } }}
+                                size="small"
+                                InputProps={{
+                                  startAdornment: (
+                                    <InputAdornment position="start">$</InputAdornment>
+                                  ),
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            // alignItems: "center",
+                            gap: 2,
+                          }}
+                        >
+                          <Typography
+                            variant="h7"
+                            className="text-[#4c257e] font-bold pb-2"
+                            sx={{ minWidth: "60px" }}
+                          >
+                            CTW
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 2,
+                              flex: 1,
+                            }}
+                          >
+                            {roundFields.map((field) => (
+                              <TextField
+                                key={`${field.name}_weight`}
+                                label={field.label}
+                                name={field.name}
+                                type="number"
+                                inputProps={{ min: 0, step: 0.01 }}
+                                value={values?.[field.name + "_weight"]}
+                                onChange={(e) =>
+                                  setFieldValue(field.name + "_weight", e.target.value)
+                                }
+                                sx={{ width: { xs: "100%", sm: 180 } }}
+                                size="small"
+                                InputProps={{
+                                  endAdornment: (
+                                    <InputAdornment position="end">ctw</InputAdornment>
+                                  ),
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: { xs: "column", md: "row" },
+                      alignItems: { xs: "flex-start", md: "center" },
+                      gap: { xs: 2, md: 3 },
+                      marginBottom: 3,
+                    }}
+                  >
+                    <Typography
+                      variant="h7"
+                      className="text-[#4c257e] font-bold pb-2 md:pb-5"
+                      sx={{ width: { xs: "100%", md: "150px" }, minWidth: { md: "150px" } }}
+                    >
+                      Baguettes
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: { xs: "column", sm: "row" },
+                        alignItems: { xs: "flex-start", sm: "center" },
+                        gap: { xs: 2, sm: 3 },
+                        width: "100%",
+                      }}
+                    >
+                      <FormControl sx={{ width: { xs: "100%", sm: 350 } }} size="small">
+                        <InputLabel id="diamond-type-label">
+                          Diamond Type
+                        </InputLabel>
+                        <Select
+                          label="Diamond Type"
+                          value={values?.diamondTypeBagutte}
+                          onChange={(e) => handleChangeBaguettes(e, setFieldValue)}
+                        >
+                          {Object.keys(diamondRateBaguettes).map((type) => (
+                            <MenuItem key={type} value={type}>
+                              {type}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 6,
+                          width: "100%",
+                          marginTop: 5,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            // alignItems: "center",
+                            gap: 2,
+                          }}
+                        >
+                          <Typography
+                            variant="h7"
+                            className="text-[#4c257e] font-bold pb-2"
+                            sx={{ minWidth: "60px" }}
+                          >
+                            Price
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 2,
+                              flex: 1,
+                            }}
+                          >
+                            {baguetteFields.map((field) => (
+                              <TextField
+                                key={field.name}
+                                label={field.label}
+                                name={field.name}
+                                type="number"
+                                inputProps={{ min: 0, step: 0.01 }}
+                                value={values?.[field.name]}
+                                onChange={(e) =>
+                                  setFieldValue(field.name, e.target.value)
+                                }
+                                sx={{ width: { xs: "100%", sm: 180 } }}
+                                size="small"
+                                InputProps={{
+                                  startAdornment: (
+                                    <InputAdornment position="start">$</InputAdornment>
+                                  ),
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            // alignItems: "center",
+                            gap: 2,
+                          }}
+                        >
+                          <Typography
+                            variant="h7"
+                            className="text-[#4c257e] font-bold pb-2"
+                            sx={{ minWidth: "60px" }}
+                          >
+                            CTW
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 2,
+                              flex: 1,
+                            }}
+                          >
+                            {baguetteFields.map((field) => (
+                              <TextField
+                                key={`${field.name}_weight`}
+                                label={field.label}
+                                name={`${field.name}_weight`}
+                                type="number"
+                                inputProps={{ min: 0, step: 0.01 }}
+                                value={values?.[field.name + "_weight"]}
+                                onChange={(e) =>
+                                  setFieldValue(field.name + "_weight", e.target.value)
+                                }
+                                sx={{ width: { xs: "100%", sm: 180 } }}
+                                size="small"
+                                InputProps={{
+                                  endAdornment: (
+                                    <InputAdornment position="end">ctw</InputAdornment>
+                                  ),
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+                  <div
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      justifyContent: "center",
+                      paddingTop: 20,
+                    }}
+                  >
+                    <Button
+                      onClick={() => handleStartAddingEntries(values)}
+                      variant="contained"
+                      className="!bg-[var(--brand-purple)] font-semibold hover:!bg-[var(--brand-dark-purple)] transition-all"
+                    >
+                      {!showValuesSection ? (
+                        <Typography>Create Quotation</Typography>
+                      ) : (
+                        <Typography>Update Quotation</Typography>
+                      )}
+                    </Button>
+                  </div>
+                </Form>
+              )}
+            </Formik>
+          </Box>
+        </Fade>
+
+        {/* Values Section */}
+        <Fade in={showValuesSection} timeout={300}>
+          <Box className="mb-5 p-6 bg-white rounded shadow-md" ref={exportRef} sx={{ overflowX: 'hidden' }}>
+            <Box className="flex justify-between items-center gap-2">
+              <Typography
+                variant="h5"
+                className="text-[#4c257e] font-bold pb-10"
+              >
+                Manage Entries
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={handleCloseValuesSection}
+                style={{ marginTop: "-30px" }}
+              >
+                <Close />
+              </IconButton>
+            </Box>
+
+            {contentRows?.length > 0 ? (
+              <div className="table-scroll-container" style={{ overflowX: 'auto' }}>
+                <Table
+                  sx={{
+                    minWidth: { xs: 500, sm: 650 },
+                    border: 1,
+                    borderColor: "grey.400",
+                    fontSize: { xs: "12px", sm: "14px" },
+                    marginBottom: 1,
+                  }}
+                  aria-label="quotation table"
+                >
+                <TableHead>
+                  <TableRow
+                    sx={{
+                      borderBottom: 1,
+                      borderColor: "grey.400",
+                      height: { xs: 35, sm: 45 },
+                    }}
+                  >
+                    <TableCell
+                      sx={{
+                        borderRight: 1,
+                        borderColor: "grey.400",
+                        py: { xs: 0.25, sm: 0.5 },
+                        minHeight: 20,
+                        fontWeight: 700,
+                        fontSize: { xs: "12px", sm: "14px" },
+                        width: { xs: "30%", sm: "auto" },
+                      }}
+                    >
+                      Product
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        borderRight: 1,
+                        borderColor: "grey.400",
+                        py: { xs: 0.25, sm: 0.5 },
+                        minHeight: 20,
+                        fontWeight: 700,
+                        fontSize: { xs: "12px", sm: "14px" },
+                        width: { xs: "40%", sm: "auto" },
+                      }}
+                    >
+                      <TextField
+                        value={description}
+                        onChange={(e) => {
+                          setDescription(e.target.value);
+                          // Clear error when user starts typing
+                          if (descriptionError) {
+                            setDescriptionError("");
+                          }
+                        }}
+                        placeholder="Enter quotation description..."
+                        multiline
+                        error={!!descriptionError}
+                        helperText={descriptionError}
+                        sx={{
+                          width: "100%",
+                          "& .MuiOutlinedInput-root": {
+                            "& fieldset": {
+                              borderColor: "white",
+                            },
+                            "&:hover fieldset": {
+                              borderColor: "white",
+                            },
+                            "&.Mui-focused fieldset": {
+                              borderColor: "white",
+                            },
+                            minHeight: 20,
+                            fontWeight: 700,
+                            fontSize: { xs: "11px", sm: "13px" },
+                          },
+                          "& .MuiInputBase-input": {
+                            py: { xs: 0.25, sm: 0.5 },
+                            fontSize: { xs: "11px", sm: "13px" },
+                          },
+                        }}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        py: { xs: 0.25, sm: 0.5 },
+                        minHeight: 20,
+                        fontWeight: 700,
+                        fontSize: { xs: "12px", sm: "14px" },
+                        width: { xs: "80px", sm: "auto" },
+                      }}
+                      align="center"
+                    >
+                      Actions
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {contentRows.map((row, rowIndex) => (
+                    <TableRow
+                      key={rowIndex}
+                      sx={{
+                        borderBottom: 1,
+                        borderColor: "grey.400",
+                        height: { xs: 28, sm: 36 },
+                      }}
+                    >
+                      <TableCell
+                        sx={{
+                          borderRight: 1,
+                          borderColor: "grey.400",
+                          py: { xs: 0.25, sm: 0.5 },
+                          minHeight: 20,
+                          width: { xs: "30%", sm: "auto" },
+                        }}
+                      >
+                        <TextField
+                          value={row[0]}
+                          onChange={(e) =>
+                            updateContentCell(rowIndex, 0, e.target.value)
+                          }
+                          type="text"
+                          sx={{
+                            width: "100%",
+                            "& .MuiOutlinedInput-root": {
+                              "& fieldset": {
+                                borderColor: "white",
+                              },
+                              "&:hover fieldset": {
+                                borderColor: "white",
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor: "white",
+                              },
+                              minHeight: { xs: 20, sm: 24 },
+                              fontSize: { xs: "11px", sm: "12px" },
+                            },
+                            "& .MuiInputBase-input": {
+                              py: { xs: 0.25, sm: 0.5 },
+                              fontSize: { xs: "11px", sm: "12px" },
+                            },
+                          }}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          borderRight: 1,
+                          borderColor: "grey.400",
+                          py: { xs: 0.25, sm: 0.5 },
+                          minHeight: 20,
+                          width: { xs: "40%", sm: "auto" },
+                        }}
+                      >
+                        <TextField
+                          value={row[1]}
+                          onChange={(e) =>
+                            updateContentCell(rowIndex, 1, e.target.value)
+                          }
+                          type="number"
+                          inputProps={{ min: 0, step: 0.01 }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                {currencyOptions[selectedCurrency].symbol}
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            width: "100%",
+                            "& .MuiOutlinedInput-root": {
+                              "& fieldset": {
+                                borderColor: "white",
+                              },
+                              "&:hover fieldset": {
+                                borderColor: "white",
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor: "white",
+                              },
+                              minHeight: { xs: 20, sm: 24 },
+                              fontSize: { xs: "11px", sm: "12px" },
+                            },
+                            "& .MuiInputBase-input": {
+                              py: { xs: 0.25, sm: 0.5 },
+                              fontSize: { xs: "11px", sm: "12px" },
+                            },
+                          }}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell
+                        align="center"
+                        sx={{
+                          py: { xs: 0.25, sm: 0.5 },
+                          minHeight: 20,
+                          width: { xs: "80px", sm: "auto" },
+                        }}
+                      >
+                        <IconButton
+                          color="error"
+                          onClick={() => deleteContentRow(rowIndex)}
+                          size="small"
+                          sx={{ padding: { xs: 0.5, sm: 1 } }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {totals.map((item, index) => (
+                    <TableRow
+                      key={index}
+                      sx={{
+                        borderBottom: 1,
+                        borderColor: "grey.400",
+                        height: { xs: 28, sm: 36 },
+                      }}
+                    >
+                      <TableCell
+                        sx={{
+                          borderRight: 1,
+                          borderColor: "grey.400",
+                          py: { xs: 0.25, sm: 0.5 },
+                          minHeight: 20,
+                          fontWeight: 700,
+                          fontSize: { xs: "12px", sm: "13px" },
+                          width: { xs: "30%", sm: "auto" },
+                        }}
+                      >
+                        {item.label}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          borderColor: "grey.400",
+                          borderRight: "1px solid white",
+                          py: { xs: 0.25, sm: 0.5 },
+                          minHeight: 20,
+                          width: { xs: "40%", sm: "auto" },
+                        }}
+                      >
+                        <TextField
+                          value={item?.value}
+                          type="number"
+                          inputProps={{ min: 0, step: 0.01 }}
+                          onChange={(e) => {
+                            const newValue = parseFloat(e.target.value);
+                            if (item.label === "Sub Total") {
+                              setSubtotal(newValue);
+                              const newProfitAndLabour = (newValue * (details.profitLabour / 100));
+                              setProfitAndLabour(newProfitAndLabour);
+                              const newTotal = (newValue + parseFloat(newProfitAndLabour));
+                              setTotal(newTotal?.toFixed(3));
+                            } else if (item.label === "Profit and Labour") {
+                              setProfitAndLabour(newValue);
+                              const newTotal = (parseFloat(subtotal) + newValue);
+                              setTotal(newTotal?.toFixed(3));
+                              // Update the Generic Details profitLabour percentage
+                              const newPercentage = subtotal > 0 ? (newValue * 100) / subtotal : 0;
+                              setDetails(prev => ({ ...prev, profitLabour: newPercentage }));
+                            } else if (item.label === "Total") {
+                              setTotal(newValue?.toFixed(3));
+                              const newProfitAndLabour = (newValue - parseFloat(subtotal));
+                              setProfitAndLabour(newProfitAndLabour);
+                              // Update the Generic Details profitLabour percentage
+                              const newPercentage = subtotal > 0 ? (newProfitAndLabour * 100) / subtotal : 0;
+                              setDetails(prev => ({ ...prev, profitLabour: newPercentage }));
+                            }
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                {currencyOptions[selectedCurrency].symbol}
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            width: "100%",
+                            "& .MuiOutlinedInput-root": {
+                              "& fieldset": {
+                                borderColor: "white",
+                              },
+                              "&:hover fieldset": {
+                                borderColor: "white",
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor: "white",
+                              },
+                              minHeight: { xs: 20, sm: 24 },
+                              fontSize: { xs: "11px", sm: "12px" },
+                            },
+                            "& .MuiInputBase-input": {
+                              py: { xs: 0.25, sm: 0.5 },
+                              fontSize: { xs: "11px", sm: "12px" },
+                            },
+                          }}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell
+                        align="center"
+                        sx={{
+                          py: { xs: 0.25, sm: 0.5 },
+                          minHeight: 20,
+                          width: { xs: "80px", sm: "auto" },
+                        }}
+                      >
+                        {/* Empty cell for alignment */}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            ) : (
+              <Typography className="text-gray-500 italic mb-2">
+                No entries yet
+              </Typography>
+            )}
+            {contentRows?.length > 0 && (
+              <Box className="flex justify-end w-full">
+                <Box></Box>
+              </Box>
+            )}
+
+            {/* Buttons */}
+            <Box className="flex flex-col gap-4 mt-6">
+              {/* First row: Add Entry and Clear All */}
+              <Box className="flex justify-between">
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  className="!bg-[var(--brand-purple)] font-semibold hover:!bg-[var(--brand-dark-purple)] transition-all"
+                  onClick={addContentRow}
+                >
+                  Add Entry
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => setOpenClearAll(true)}
+                  disabled={contentRows?.length === 0}
+                >
+                  Clear All
+                </Button>
+              </Box>
+
+              {/* Second row: Whatsapp and Save/Download */}
+              {contentRows?.length > 0 && (
+                <Box className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={sendImageToWhatsApp}
+                    className="whatsapp-btn"
+                  >
+                    <FaWhatsapp
+                      size={35}
+                      color="#25D366"
+                      className="whatsapp-icon"
+                    />
+                  </Button>
+                  <Box>
+                    {showSave ? (
+                      <Button
+                        variant="contained"
+                        className="!bg-[var(--brand-purple)] font-semibold hover:!bg-[var(--brand-dark-purple)] transition-all"
+                        onClick={handleSaveQuotation}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? (
+                          <CircularProgress size={20} sx={{ color: "white" }} />
+                        ) : (
+                          <Typography variant="button" className="text-white">
+                            Save
+                          </Typography>
+                        )}
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          variant="contained"
+                          className="!bg-[var(--brand-purple)] font-semibold hover:!bg-[var(--brand-dark-purple)] transition-all"
+                          onClick={(e) => setAnchorEl(e.currentTarget)}
+                        >
+                          Download
+                        </Button>
+                        <Menu
+                          anchorEl={anchorEl}
+                          open={Boolean(anchorEl)}
+                          onClose={() => setAnchorEl(null)}
+                        >
+                          <MenuItem
+                            onClick={() => {
+                              setAnchorEl(null);
+                              downloadPDF(false);
+                            }}
+                          >
+                            Download as PDF
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => {
+                              setAnchorEl(null);
+                              downloadImage(false);
+                            }}
+                          >
+                            Download as Image
+                          </MenuItem>
+                        </Menu>
+                      </>
+                    )}
+                  </Box>
+                </Box>
+              )}
+            </Box>
+            {/* Warning Dialog */}
+            <Dialog
+              open={openWarning}
+              onClose={() => handleWarningClose(false)}
+            >
+              <DialogTitle>Clear and Close Manage Entries?</DialogTitle>
+              <DialogContent>
+                <DialogContentText>
+                  This will clear manually added entries and close the Manage Entries
+                  section. Are you sure you want to proceed?
+                </DialogContentText>
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  onClick={() => handleWarningClose(false)}
+                  color="primary"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => handleWarningClose(true)}
+                  color="error"
+                  autoFocus
+                >
+                  Yes, Clear & Close
+                </Button>
+              </DialogActions>
+            </Dialog>
+            {/* Clear All Dialog */}
+            <Dialog open={openClearAll} onClose={() => setOpenClearAll(false)}>
+              <DialogTitle>Clear All Entries?</DialogTitle>
+              <DialogContent>
+                <DialogContentText>
+                  This will remove all entries. Are you sure you want to
+                  proceed?
+                </DialogContentText>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setOpenClearAll(false)} color="primary">
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    clearAllEntries();
+                    setOpenClearAll(false);
+                  }}
+                  color="error"
+                  autoFocus
+                >
+                  Yes, Clear All
+                </Button>
+              </DialogActions>
+            </Dialog>
+          </Box>
+        </Fade>
+      </div>
+    </Box>
+  );
+};
+
+export default CreateQuotation;
+
+const style = document.createElement("style");
+style.innerHTML = `
+.whatsapp-btn .whatsapp-icon {
+  transition: transform 0.2s;
+}
+.whatsapp-btn:hover .whatsapp-icon {
+  transform: scale(1.2857); /* 35 -> 45 */
+}
+
+/* Custom scrollbar styles for table container */
+.table-scroll-container::-webkit-scrollbar {
+  height: 6px; /* Reduced from default browser scrollbar height */
+}
+
+.table-scroll-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.table-scroll-container {
+  scrollbar-height: thin;
+  scrollbar-color: #888 #f1f1f1;
+}
+`;
+document.head.appendChild(style);

@@ -71,6 +71,7 @@ const userSlice = createSlice({
     userDetails: getUserFromStorage(),
     status: "idle",
     error: null,
+    isMobile: false,
   },
   reducers: {
     logoutUser: (state) => {
@@ -89,6 +90,9 @@ const userSlice = createSlice({
         state.userDetails = savedUser;
         state.status = "succeeded";
       }
+    },
+    setIsMobile: (state, action) => {
+      state.isMobile = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -123,5 +127,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { logoutUser, clearUserError, rehydrateUser } = userSlice.actions;
+export const { logoutUser, clearUserError, rehydrateUser, setIsMobile } = userSlice.actions;
 export default userSlice.reducer;
