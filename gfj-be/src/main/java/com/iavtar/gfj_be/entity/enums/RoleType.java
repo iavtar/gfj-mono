@@ -21,15 +21,13 @@ public enum RoleType {
     }
 
     @JsonCreator
-    public RoleType from(String data) {
+    public static RoleType from(String data) {
         for (RoleType roleType : RoleType.values()) {
             if (roleType.value.equalsIgnoreCase(data)) {
                 return roleType;
-            } else {
-                throw new IllegalArgumentException(data + " Role not present");
             }
         }
-        return null;
+        throw new IllegalArgumentException(data + " Role not present");
     }
 
 }
